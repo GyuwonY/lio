@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+asyncmy # SQLAlchemy용 비동기 MySQL 드라이버
+weaviate-client
+langchain
+langgraph
+pydantic-settings
+google-auth
+python-jose[cryptography]
+aiofiles # 비동기 파일 처리를 위한 라이브러리
+langchain-openai
