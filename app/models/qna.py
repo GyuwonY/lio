@@ -1,26 +1,39 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Enum
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
+from datetime import datetime
+from typing import Optional
 import enum
 
+from sqlalchemy import Integer, DateTime, ForeignKey, Text, Enum
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
+
 from app.db.session import Base
+from app.models.user import User
+
 
 class QnAStatus(enum.Enum):
     DRAFT = "draft"
     CONFIRMED = "confirmed"
 
+
 class QnA(Base):
     __tablename__ = "qnas"
 
-    id = Column(Integer, primary_key=True, index=True)
-    question = Column(Text, nullable=False)
-    answer = Column(Text, nullable=True)
-    status = Column(Enum(QnAStatus), default=QnAStatus.DRAFT, nullable=False)
-    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 
-    owner = relationship("User", back_populates="qnas")
+    question: Mapped[str] = mapped_column(Text, nullable=False)
 
-# User 모델에 qnas 관계 추가
-from app.models.user import User
-User.qnas = relationship("QnA", order_by=QnA.id, back_populates="owner")
+    answer: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    status: Mapped[QnAStatus] = mapped_column(
+        Enum(QnAStatus), default=QnAStatus.DRAFT, nullable=False
+    )
+
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id"), nullable=False
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    user: Mapped[User] = relationship(back_populates="qnas")

@@ -1,39 +1,82 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
+import weaviate
 
-from app.core.config import settings
-from app.db.session import get_db
-from app.models.user import User
-from app.schemas.user import TokenData
-from app.crud import user as crud_user
+from app.services.auth_service import AuthService
+from app.crud.user import UserCRUD
+from app.services.agent_service import AgentService
+from app.services.chatbot_setting_service import ChatbotSettingService
+from app.crud.chatbot_setting import ChatbotSettingCRUD
+from app.services.portfolio_service import PortfolioService
+from app.crud.portfolio import PortfolioCRUD
+from app.services.rag_service import RAGService
+from app.services.qna_service import QnAService
+from app.crud.qna import QnACRUD
+from app.services.llm_service import LLMService
+from app.db.session import weaviate_client
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/token")
 
-async def get_current_user(
-    db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme)
-) -> User:
-    """
-    JWT 토큰을 검증하고 현재 로그인한 사용자 정보를 비동기적으로 반환합니다.
-    """
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
+def get_weaviate_client() -> weaviate.Client:
+    return weaviate_client
+
+
+def get_auth_service() -> AuthService:
+    return AuthService()
+
+
+def get_user_crud() -> UserCRUD:
+    return UserCRUD()
+
+
+def get_chatbot_setting_crud() -> ChatbotSettingCRUD:
+    return ChatbotSettingCRUD()
+
+
+def get_chatbot_setting_service(
+    crud: ChatbotSettingCRUD = Depends(get_chatbot_setting_crud),
+) -> ChatbotSettingService:
+    return ChatbotSettingService(crud=crud)
+
+
+def get_agent_service(
+    user_crud: UserCRUD = Depends(get_user_crud),
+    chatbot_setting_service: ChatbotSettingService = Depends(
+        get_chatbot_setting_service
+    ),
+) -> AgentService:
+    return AgentService(
+        user_crud=user_crud, chatbot_setting_service=chatbot_setting_service
     )
-    try:
-        payload = jwt.decode(
-            token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
-        )
-        email: str = payload.get("sub")
-        if email is None:
-            raise credentials_exception
-        token_data = TokenData(email=email)
-    except JWTError:
-        raise credentials_exception
-    
-    user = await crud_user.get_user_by_email(db, email=token_data.email)
-    if user is None:
-        raise credentials_exception
-    return user
+
+
+def get_portfolio_crud() -> PortfolioCRUD:
+    return PortfolioCRUD()
+
+
+def get_rag_service(
+    client: weaviate.Client = Depends(get_weaviate_client),
+) -> RAGService:
+    return RAGService(weaviate_client=client)
+
+
+def get_portfolio_service(
+    crud: PortfolioCRUD = Depends(get_portfolio_crud),
+    rag_service: RAGService = Depends(get_rag_service),
+) -> PortfolioService:
+    return PortfolioService(crud=crud, rag_service=rag_service)
+
+
+def get_qna_crud() -> QnACRUD:
+    return QnACRUD()
+
+
+def get_llm_service(
+    client: weaviate.Client = Depends(get_weaviate_client),
+) -> LLMService:
+    return LLMService(weaviate_client=client)
+
+
+def get_qna_service(
+    crud: QnACRUD = Depends(get_qna_crud),
+    llm_service: LLMService = Depends(get_llm_service),
+) -> QnAService:
+    return QnAService(crud=crud, llm_service=llm_service)
