@@ -11,7 +11,7 @@ class PortfolioBase(BaseModel):
 class PortfolioCreate(PortfolioBase):
     """포트폴리오 생성을 위한 스키마"""
 
-    pass
+    file_path: str
 
 
 class PortfolioRead(PortfolioBase):
@@ -22,3 +22,15 @@ class PortfolioRead(PortfolioBase):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PortfolioUpdate(PortfolioCreate):
+    """포트폴리오 업데이트를 위한 스키마"""
+
+    pass
+
+
+class UploadURLResponse(BaseModel):
+    upload_url: str
+    portfolio_id: int
+    file_path: str

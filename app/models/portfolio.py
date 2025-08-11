@@ -27,7 +27,7 @@ class Portfolio(Base):
         nullable=False,
     )
 
-    file_path: Mapped[Optional[str]] = mapped_column(
+    file_path: Mapped[str] = mapped_column(
         String(1024),
         nullable=True,
     )

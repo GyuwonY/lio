@@ -4,28 +4,35 @@ from typing import Optional
 from google.cloud import secretmanager
 from google.api_core.exceptions import NotFound
 
+
 class Settings(BaseSettings):
     # Environment settings
     APP_ENV: str = Field("local", env="APP_ENV")  # local or production
-    GCP_PROJECT_ID: Optional[str] = Field(None, env="GCP_PROJECT_ID")
+    GCP_PROJECT_ID: str = Field(None, env="GCP_PROJECT_ID")
+
+    WEAVIATE_HOST: str = Field(..., env="WEAVIATE_HOST")
+    WEAVIATE_PORT: int = Field(..., env="WEAVIATE_PORT")
 
     # Database and Services
     DATABASE_URL: str = Field(..., env="DATABASE_URL")
     WEAVIATE_URL: str = Field(..., env="WEAVIATE_URL")
-    REDIS_URL: str = Field("redis://localhost:6379/0", env="REDIS_URL")
-    GOOGLE_API_KEY: str = Field(..., env="GOOGLE_API_KEY")
+    REDIS_URL: str = Field(..., env="REDIS_URL")
+    GEMINI_API_KEY: str = Field(..., env="GEMINI_API_KEY")
 
     # JWT Settings
     ACCESS_TOKEN_SECRET_KEY: str = Field(..., env="ACCESS_TOKEN_SECRET_KEY")
     REFRESH_TOKEN_SECRET_KEY: str = Field(..., env="REFRESH_TOKEN_SECRET_KEY")
     JWT_ALGORITHM: str = Field("HS256", env="JWT_ALGORITHM")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(30, env="ACCESS_TOKEN_EXPIRE_MINUTES")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(60, env="ACCESS_TOKEN_EXPIRE_MINUTES")
     REFRESH_TOKEN_EXPIRE_MINUTES: int = Field(
         60 * 24 * 7, env="REFRESH_TOKEN_EXPIRE_MINUTES"
     )
 
     # Google Auth
     GOOGLE_CLIENT_ID: str = Field(..., env="GOOGLE_CLIENT_ID")
+
+    # GCS
+    GCS_BUCKET_NAME: str = Field(..., env="GCS_BUCKET_NAME")
 
     # API
     API_V1_STR: str = Field("/api/v1", env="API_V1_STR")
@@ -36,7 +43,6 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "GCP_PROJECT_ID must be set in production environment."
                 )
-
 
             client = secretmanager.SecretManagerServiceClient()
 

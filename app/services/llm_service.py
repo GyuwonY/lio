@@ -3,17 +3,17 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.vectorstores.weaviate import Weaviate
-import os
-import weaviate
+from weaviate.client import WeaviateAsyncClient
+from fastapi import Depends
 
-from app.core.config import settings
 from app.services.rag_service import WEAVIATE_CLASS_NAME
-
-os.environ["GOOGLE_API_KEY"] = settings.GOOGLE_API_KEY
+from app.core.dependencies import get_weaviate_client
 
 
 class LLMService:
-    def __init__(self, weaviate_client: weaviate.Client):
+    def __init__(
+        self, weaviate_client: WeaviateAsyncClient = Depends(get_weaviate_client)
+    ):
         self.weaviate_client = weaviate_client
         self.model = ChatGoogleGenerativeAI(model="gemini-pro")
 
@@ -42,10 +42,7 @@ class LLMService:
         prompt = ChatPromptTemplate.from_template(template)
 
         chain = (
-            {"context": RunnablePassthrough()}
-            | prompt
-            | self.model
-            | StrOutputParser()
+            {"context": RunnablePassthrough()} | prompt | self.model | StrOutputParser()
         )
 
         result = await chain.ainvoke(context)

@@ -13,6 +13,4 @@ api_router.include_router(
     chatbot_setting.router, prefix="/chatbot-settings", tags=["Chatbot Settings"]
 )
 
-api_router.include_router(
-    chat.router, prefix="/chat", tags=["Chat"]
-)
+api_router.include_router(chat.router, prefix="/chat", tags=["Chat"])

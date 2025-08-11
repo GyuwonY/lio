@@ -6,20 +6,26 @@ from app.core.config import settings
 from app.db.session import async_engine, Base, weaviate_client
 from app.services.rag_service import RAGService
 
-# Import all models here to ensure they are registered with Base
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    # Connect to Weaviate
+    await weaviate_client.connect()
+
+    # Create DB tables
     async with async_engine.begin() as conn:
-        # await conn.run_sync(Base.metadata.drop_all) # 개발 중 테이블 초기화 필요시 사용
         await conn.run_sync(Base.metadata.create_all)
 
-    # Weaviate 스키마 생성
+    # Create Weaviate schema
     rag_service = RAGService(weaviate_client=weaviate_client)
-    rag_service.create_weaviate_schema_if_not_exists()
+    await rag_service.create_weaviate_schema_if_not_exists()
+
     yield
+
+    # Shutdown
+    # Close Weaviate connection
+    await weaviate_client.close()
 
 
 app = FastAPI(

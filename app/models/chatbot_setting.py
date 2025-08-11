@@ -13,7 +13,7 @@ class ChatbotSetting(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 
     tone_examples: Mapped[List[str]] = mapped_column(JSON, nullable=True)
-    
+
     persona: Mapped[str] = mapped_column(String, nullable=False)
 
     user_id: Mapped[int] = mapped_column(
