@@ -1,13 +1,11 @@
 from typing import List, Any
 from fastapi import APIRouter, Depends, Body
-from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 
 from app.schemas.portfolio import PortfolioRead, PortfolioCreate
 from app.models.user import User
 from app.services.auth_service import get_current_user
 from app.services.portfolio_service import PortfolioService
-from app.db.session import get_db
 
 router = APIRouter()
 
@@ -34,10 +32,10 @@ async def get_presigned_url(
 
 @router.post("/", response_model=PortfolioRead, status_code=201)
 async def create_portfolio(
-    *,
     current_user: User = Depends(get_current_user),
-    portfolio_in: PortfolioCreate,
     service: PortfolioService = Depends(),
+    *,
+    portfolio_in: PortfolioCreate,
 ) -> Any:
     """
     Create a new portfolio record in the database after the file has been uploaded to GCS.
@@ -51,7 +49,6 @@ async def create_portfolio(
 
 @router.get("/", response_model=List[PortfolioRead])
 async def read_portfolios(
-    *,
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
 ):

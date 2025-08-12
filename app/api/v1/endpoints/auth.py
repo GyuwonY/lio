@@ -1,7 +1,4 @@
 from fastapi import APIRouter, Depends, Body
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.db.session import get_db
 from app.schemas.token import Token
 from app.models.user import User
 from app.services.auth_service import AuthService, get_current_user_from_refresh_token
@@ -11,14 +8,10 @@ router = APIRouter()
 
 @router.post("/google", response_model=Token, tags=["Authentication"])
 async def login_with_google(
+    auth_service: AuthService = Depends(),
     *,
     id_token: str = Body(..., embed=True, alias="idToken"),
-    auth_service: AuthService = Depends(),
 ):
-    """
-    Handles Google login by validating the ID token.
-    If the user exists, logs them in. Otherwise, registers a new user.
-    """
     return await auth_service.login_or_register_google(id_token=id_token)
 
 

@@ -5,6 +5,7 @@ from app.api.v1.api import api_router
 from app.core.config import settings
 from app.db.session import async_engine, Base, weaviate_client
 from app.services.rag_service import RAGService
+import uvicorn
 
 
 @asynccontextmanager
@@ -42,3 +43,7 @@ def read_root():
 
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+if __name__ == "__main__":
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    

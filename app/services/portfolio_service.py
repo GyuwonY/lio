@@ -1,4 +1,3 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from fastapi import Depends, HTTPException
 
@@ -22,10 +21,6 @@ class PortfolioService:
         self.storage_service = storage_service
 
     def generate_presigned_url(self, *, file_name: str, current_user: User) -> dict:
-        """
-        Generates a presigned URL for the client to upload a file to GCS.
-        Does NOT create any database records.
-        """
         upload_url, object_url = self.storage_service.generate_upload_url(
             user_id=current_user.id, file_name=file_name
         )
@@ -34,10 +29,6 @@ class PortfolioService:
     async def create_portfolio(
         self, *, file_name: str, file_path: str, current_user: User
     ) -> Portfolio:
-        """
-        Creates a portfolio record in the database after the file has been uploaded.
-        Then, triggers the RAG processing.
-        """
         # 1. Create portfolio record
         portfolio_in = PortfolioCreate(file_name=file_name, file_path=file_path)
         db_portfolio = await self.crud.create_portfolio(

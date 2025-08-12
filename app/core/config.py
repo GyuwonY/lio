@@ -1,6 +1,5 @@
 from pydantic_settings import BaseSettings
 from pydantic import Field
-from typing import Optional
 from google.cloud import secretmanager
 from google.api_core.exceptions import NotFound
 
@@ -12,6 +11,7 @@ class Settings(BaseSettings):
 
     WEAVIATE_HOST: str = Field(..., env="WEAVIATE_HOST")
     WEAVIATE_PORT: int = Field(..., env="WEAVIATE_PORT")
+    WEAVIATE_API_KEY: str = Field(..., env="WEAVIATE_API_KEY")
 
     # Database and Services
     DATABASE_URL: str = Field(..., env="DATABASE_URL")
@@ -33,6 +33,7 @@ class Settings(BaseSettings):
 
     # GCS
     GCS_BUCKET_NAME: str = Field(..., env="GCS_BUCKET_NAME")
+    GOOGLE_BUCKET_CREDENTIALS: str = Field(..., env="GOOGLE_BUCKET_CREDENTIALS")
 
     # API
     API_V1_STR: str = Field("/api/v1", env="API_V1_STR")

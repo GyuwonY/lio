@@ -1,12 +1,12 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import declarative_base
-from weaviate.client import WeaviateAsyncClient
+from weaviate import WeaviateAsyncClient
+import weaviate
 from weaviate.connect import ConnectionParams
+from weaviate.classes.init import Auth
 
 from app.core.config import settings
 
-# 1. SQLAlchemy (MySQL) 비동기 설정
-# ---------------------------------
 async_engine = create_async_engine(
     settings.DATABASE_URL, pool_pre_ping=True, echo=False
 )
@@ -25,16 +25,14 @@ async def get_db():
         yield session
 
 
-# 2. Weaviate 비동기 클라이언트 설정
-# ---------------------------------
-
-weaviate_client = WeaviateAsyncClient(
+weaviate_client = weaviate.WeaviateAsyncClient(
     connection_params=ConnectionParams.from_params(
         http_host=settings.WEAVIATE_HOST,
         http_port=settings.WEAVIATE_PORT,
-        http_secure=True,
+        http_secure=False,
         grpc_host=settings.WEAVIATE_HOST,
-        grpc_port=50051,  # Default gRPC port
-        grpc_secure=True,
-    )
+        grpc_port=50051,
+        grpc_secure=False,
+    ),
+    auth_client_secret=Auth.api_key(settings.WEAVIATE_API_KEY),
 )

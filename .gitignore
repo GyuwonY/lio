@@ -208,3 +208,5 @@ __marimo__/
 
 plan.md
 GEMINI.md
+.env.*
+*.json

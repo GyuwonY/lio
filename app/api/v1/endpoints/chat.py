@@ -10,10 +10,10 @@ router = APIRouter()
 
 @router.post("/{user_email}", summary="공개 챗봇에게 질문")
 async def ask_public_chatbot(
-    user_email: str,
+    agent_service: AgentService = Depends(),
     *,
     question: str = Body(..., embed=True),
-    agent_service: AgentService = Depends(),
+    user_email: str,
 ):
     result = await agent_service.ask_question(user_email=user_email, question=question)
     if "error" in result:

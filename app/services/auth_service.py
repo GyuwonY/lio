@@ -41,7 +41,7 @@ class AuthService:
             settings.REFRESH_TOKEN_EXPIRE_MINUTES,
         )
 
-    def _verify_token(self, token: str, secret_key: str) -> Optional[TokenPayload]:
+    def _verify_token(self, *, token: str, secret_key: str) -> Optional[TokenPayload]:
         try:
             payload = jwt.decode(token, secret_key, algorithms=[settings.JWT_ALGORITHM])
             return TokenPayload(**payload)
@@ -59,7 +59,7 @@ class AuthService:
             print(f"An unexpected error occurred during token verification: {e}")
             return None
 
-    async def login_or_register_google(self, id_token: str) -> dict:
+    async def login_or_register_google(self, *, id_token: str) -> dict:
         google_user_info = self._verify_google_id_token(token=id_token)
         if not google_user_info:
             raise HTTPException(
@@ -91,7 +91,7 @@ class AuthService:
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-        token_payload = self._verify_token(token, secret_key)
+        token_payload = self._verify_token(token=token, secret_key=secret_key)
         if token_payload is None or token_payload.sub is None:
             raise credentials_exception
 

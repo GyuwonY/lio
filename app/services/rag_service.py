@@ -17,10 +17,13 @@ WEAVIATE_CLASS_NAME = "Portfolio"
 
 class RAGService:
     def __init__(
-        self, weaviate_client: WeaviateAsyncClient = Depends(get_weaviate_client)
+        self, weaviate_client: WeaviateAsyncClient = Depends(get_weaviate_client), 
     ):
         self.client = weaviate_client
-        self.embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        self.embeddings = GoogleGenerativeAIEmbeddings(
+            model="gemini-embedding-001",
+            google_api_key=settings.GEMINI_API_KEY,
+        )
 
     async def process_and_store_document(
         self, file_path: str, file_type: str, metadata: Dict[str, Any]
@@ -62,12 +65,10 @@ class RAGService:
             await collection.data.insert_many(objects_to_insert)
 
     async def create_weaviate_schema_if_not_exists(self):
-        """
-        Creates the Weaviate schema (collection) using native async methods if it does not exist.
-        """
         exists = await self.client.collections.exists(WEAVIATE_CLASS_NAME)
         if not exists:
-            await self.client.collections.create(
+            async with self.client:
+                await self.client.collections.create(
                 name=WEAVIATE_CLASS_NAME,
                 properties=[
                     Property(name="text", data_type=DataType.TEXT),
@@ -76,6 +77,6 @@ class RAGService:
                     Property(name="file_name", data_type=DataType.TEXT),
                 ],
                 vectorizer_config=Configure.Vectorizer.text2vec_google(
-                    project_id=settings.GCP_PROJECT_ID, model_id="text-embedding-004"
+                    project_id=settings.GCP_PROJECT_ID, model_id="gemini-embedding-001"
                 ),
             )
