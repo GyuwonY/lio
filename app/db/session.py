@@ -1,6 +1,5 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import declarative_base
-from weaviate import WeaviateAsyncClient
 import weaviate
 from weaviate.connect import ConnectionParams
 from weaviate.classes.init import Auth

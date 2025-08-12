@@ -1,6 +1,5 @@
 import re
 from typing import List
-from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status, Depends
 
 from app.crud.qna import QnACRUD

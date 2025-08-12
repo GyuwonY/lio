@@ -1,10 +1,12 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from sqlalchemy import Integer, ForeignKey, JSON, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
-from app.models.user import User
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 
 class ChatbotSetting(Base):
@@ -20,4 +22,4 @@ class ChatbotSetting(Base):
         Integer, ForeignKey("users.id"), unique=True, nullable=False
     )
 
-    user: Mapped[User] = relationship(back_populates="chatbot_setting")
+    user: Mapped["User"] = relationship(back_populates="chatbot_setting")

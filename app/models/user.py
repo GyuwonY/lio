@@ -1,14 +1,16 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
 from sqlalchemy import Integer, String, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.db.session import Base
-from app.models.chatbot_setting import ChatbotSetting
-from app.models.portfolio import Portfolio
-from app.models.qna import QnA
+
+if TYPE_CHECKING:
+    from app.models.chatbot_setting import ChatbotSetting
+    from app.models.portfolio import Portfolio
+    from app.models.qna import QnA
 
 
 class User(Base):
@@ -26,6 +28,6 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now()
     )
 
-    portfolios: Mapped[List[Portfolio]] = relationship(back_populates="user")
-    qnas: Mapped[List[QnA]] = relationship(back_populates="user")
-    chatbot_setting: Mapped[ChatbotSetting] = relationship(back_populates="user")
+    portfolios: Mapped[List["Portfolio"]] = relationship(back_populates="user")
+    qnas: Mapped[List["QnA"]] = relationship(back_populates="user")
+    chatbot_setting: Mapped["ChatbotSetting"] = relationship(back_populates="user")

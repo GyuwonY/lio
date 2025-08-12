@@ -7,7 +7,7 @@ from google.api_core.exceptions import NotFound
 class Settings(BaseSettings):
     # Environment settings
     APP_ENV: str = Field("local", env="APP_ENV")  # local or production
-    GCP_PROJECT_ID: str = Field(None, env="GCP_PROJECT_ID")
+    GCP_PROJECT_ID: str = Field(..., env="GCP_PROJECT_ID")
 
     WEAVIATE_HOST: str = Field(..., env="WEAVIATE_HOST")
     WEAVIATE_PORT: int = Field(..., env="WEAVIATE_PORT")
@@ -15,8 +15,6 @@ class Settings(BaseSettings):
 
     # Database and Services
     DATABASE_URL: str = Field(..., env="DATABASE_URL")
-    WEAVIATE_URL: str = Field(..., env="WEAVIATE_URL")
-    REDIS_URL: str = Field(..., env="REDIS_URL")
     GEMINI_API_KEY: str = Field(..., env="GEMINI_API_KEY")
 
     # JWT Settings

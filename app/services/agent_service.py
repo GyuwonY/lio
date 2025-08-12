@@ -1,4 +1,3 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 from weaviate.client import WeaviateAsyncClient
 

@@ -8,6 +8,8 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    volumes:
+      - ./credentials/your-gcp-credentials.json:/app/credentials/your-gcp-credentials.json:ro
     depends_on:
       - postgres_db
       - weaviate_db

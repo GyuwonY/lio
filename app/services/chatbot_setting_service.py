@@ -1,5 +1,4 @@
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.chatbot_setting import ChatbotSetting
 from app.models.user import User
