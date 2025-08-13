@@ -9,7 +9,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./credentials/your-gcp-credentials.json:/app/credentials/your-gcp-credentials.json:ro
+      - ./credentials/ai-study-464204-3e35ff04eef9.json:/app/credentials/ai-study-464204-3e35ff04eef9.json:ro
     depends_on:
       - postgres_db
       - weaviate_db
