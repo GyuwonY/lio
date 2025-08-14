@@ -36,6 +36,7 @@ jobs:
           region: ${{ env.REGION }}
           env_vars: |
             GCP_PROJECT_ID=${{ env.PROJECT_ID }}
+            APP_ENV=dev
           secrets: |
             DATABASE_URL=DATABASE_URL_TEST:latest
             GEMINI_API_KEY=GEMINI_API_KEY_TEST:latest
