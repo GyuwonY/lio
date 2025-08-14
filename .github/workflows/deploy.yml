@@ -24,7 +24,6 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          cd backend
           gcloud auth configure-docker ${REGION}-docker.pkg.dev
           docker build -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${SERVICE_NAME}/${SERVICE_NAME}:${{ github.sha }} .
           docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${SERVICE_NAME}/${SERVICE_NAME}:${{ github.sha }}
