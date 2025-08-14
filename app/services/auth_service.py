@@ -7,9 +7,9 @@ from jose import JWTError, jwt
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
-from app.crud.user import UserCRUD
-from app.schemas.user import UserCreate
-from app.schemas.token import TokenPayload
+from app.crud.user_crud import UserCRUD
+from app.schemas.user_schema import UserCreate
+from app.schemas.token_schema import TokenPayload
 from app.core.config import settings
 from app.models.user import User
 

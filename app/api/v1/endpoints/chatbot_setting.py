@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from app.schemas.chatbot_setting import ChatbotSettingRead, ChatbotSettingUpdate
+from app.schemas.chatbot_setting_schema import ChatbotSettingRead, ChatbotSettingUpdate
 from app.models.user import User
 from app.services.auth_service import get_current_user
 from app.services.chatbot_setting_service import ChatbotSettingService

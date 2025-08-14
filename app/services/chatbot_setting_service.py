@@ -2,8 +2,8 @@ from fastapi import Depends
 
 from app.models.chatbot_setting import ChatbotSetting
 from app.models.user import User
-from app.crud.chatbot_setting import ChatbotSettingCRUD
-from app.schemas.chatbot_setting import ChatbotSettingUpdate
+from app.crud.chatbot_setting_crud import ChatbotSettingCRUD
+from app.schemas.chatbot_setting_schema import ChatbotSettingUpdate
 
 
 class ChatbotSettingService:

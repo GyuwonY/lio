@@ -5,6 +5,7 @@ import enum
 from sqlalchemy import Integer, DateTime, ForeignKey, Text, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
+from pgvector.sqlalchemy import Vector
 
 from app.db.session import Base
 from app.models.user import User
@@ -23,6 +24,8 @@ class QnA(Base):
     question: Mapped[str] = mapped_column(Text, nullable=False)
 
     answer: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    embedding = mapped_column(Vector(768), nullable=True)
 
     status: Mapped[QnAStatus] = mapped_column(
         Enum(QnAStatus), default=QnAStatus.DRAFT, nullable=False

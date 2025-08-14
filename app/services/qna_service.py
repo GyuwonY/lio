@@ -2,8 +2,8 @@ import re
 from typing import List
 from fastapi import HTTPException, status, Depends
 
-from app.crud.qna import QnACRUD
-from app.schemas.qna import QnAUpdate
+from app.crud.qna_crud import QnACRUD
+from app.schemas.qna_schema import QnAUpdate
 from app.models.user import User
 from app.models.qna import QnA
 from app.services.llm_service import LLMService
@@ -24,24 +24,9 @@ class QnAService:
     async def generate_qna_from_portfolios(
         self, *, portfolio_ids: list[int], current_user: User
     ) -> dict:
-        generated_text = await self.llm_service.generate_qna_from_portfolios(
-            portfolio_ids=portfolio_ids, user_id=current_user.id
-        )
-        qna_pairs = re.findall(r"Q:(.*?) A:(.*?)(?=Q:|$)", generated_text, re.DOTALL)
-        if not qna_pairs:
-            raise HTTPException(
-                status_code=500, detail="Failed to parse Q&A from LLM response."
-            )
-
-        created_qnas = []
-        for q, a in qna_pairs:
-            qna_obj = await self.crud.create_qna(
-                question=q.strip(), answer=a.strip(), user=current_user
-            )
-            created_qnas.append(qna_obj)
 
         return {
-            "message": f"{len(created_qnas)} Q&A pairs have been generated successfully."
+            "message": f"Q&A pairs have been generated successfully."
         }
 
     async def update_qna(

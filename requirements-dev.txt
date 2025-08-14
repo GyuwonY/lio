@@ -1,0 +1,7 @@
+# Include production dependencies
+-r requirements.txt
+
+# Development-only dependencies
+black==25.1.0
+ruff==0.12.8
+mypy_extensions==1.1.0

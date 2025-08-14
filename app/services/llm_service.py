@@ -1,49 +1,69 @@
+import json
+from typing import List, Dict, Any
+
+from fastapi import Depends
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_community.vectorstores.weaviate import Weaviate
-from weaviate.client import WeaviateAsyncClient
-from fastapi import Depends
 
-from app.services.rag_service import WEAVIATE_CLASS_NAME
-from app.core.dependencies import get_weaviate_client
+from app.core.config import settings
 
+# RAGService에서 프롬프트를 이곳으로 이동
+STRUCTURE_PORTFOLIO_PROMPT = """
+당신은 HR 전문가입니다. 주어진 포트폴리오 원본 텍스트에서 다음 JSON 스키마에 따라 정보를 추출하고 구조화해주세요.
+
+**JSON 스키마:**
+```json
+{{
+    "items": [
+        {{
+            "item_type": "소개|경력|프로젝트|기술스택|학력 및 교육",
+            "topic": "회사명, 프로젝트명, 기술 이름 등 (해당하는 경우)",
+            "period": "업무 기간, 프로젝트 기간 등 (해당하는 경우)",
+            "content": "구체적인 내용, 역할, 성과 등"
+        }}
+    ]
+}}
+```
+
+**추출 규칙:**
+- 각 항목은 `item_type` 중 하나로 분류되어야 합니다.
+- '경력'의 `topic`은 회사명, '프로젝트'의 `topic`은 프로젝트명입니다.
+- '소개', '기술스택', '학력 및 교육'은 `topic`이나 `period`가 없을 수 있습니다.
+- `content`는 각 항목의 핵심 내용을 요약하여 담아주세요.
+- 주어진 텍스트에서 정보를 찾을 수 없는 경우, 해당 필드는 누락하거나 `null`로 설정하세요.
+- 최종 결과는 반드시 JSON 형식이어야 합니다.
+
+**포트폴리오 원본 텍스트:**
+---
+{text}
+---
+"""
 
 class LLMService:
-    def __init__(
-        self, weaviate_client: WeaviateAsyncClient = Depends(get_weaviate_client)
-    ):
-        self.weaviate_client = weaviate_client
-        self.model = ChatGoogleGenerativeAI(model="gemini-pro")
-
-    async def generate_qna_from_portfolios(
-        self, portfolio_ids: list[int], user_id: int
-    ) -> str:
-        vectorstore = Weaviate(
-            client=self.weaviate_client,
-            index_name=WEAVIATE_CLASS_NAME,
-            text_key="text",
+    def __init__(self):
+        self.model = ChatGoogleGenerativeAI(
+            model=settings.LLM_MODEL,
+            google_api_key=settings.GEMINI_API_KEY,
+            temperature=0.1,
+            convert_system_message_to_human=True
         )
 
-        # This part might need refinement to actually use portfolio_ids and user_id
-        docs = await vectorstore.asimilarity_search("포트폴리오 요약", k=10)
-        context = "\n".join([doc.page_content for doc in docs])
+    async def structure_portfolio_from_text(self, text: str) -> List[Dict[str, Any]]:
+        """LLM을 사용하여 텍스트에서 구조화된 포트폴리오 항목들을 추출합니다."""
+        prompt = ChatPromptTemplate.from_template(STRUCTURE_PORTFOLIO_PROMPT)
+        chain = prompt | self.model | StrOutputParser()
 
-        template = """
-        당신은 전문 채용 담당자입니다. 주어진 포트폴리오 내용을 바탕으로, 면접에서 나올 법한 예상 질문과 그에 대한 모범 답변을 3개 생성해주세요.
-        각 Q&A는 "Q:"로 시작하고 "A:"로 시작해야 하며, 명확하게 구분되어야 합니다.
+        response_str = await chain.ainvoke({"text": text})
+        
+        try:
+            json_part = response_str.split("```json")[1].split("```")[0]
+            structured_data = json.loads(json_part)
+        except Exception:
+            try:
+                structured_data = json.loads(response_str)
+            except json.JSONDecodeError:
+                raise ValueError("LLM의 응답을 JSON으로 파싱하는데 실패했습니다.")
 
-        포트폴리오 내용:
-        {context}
-
-        예상 질문 및 답변:
-        """
-        prompt = ChatPromptTemplate.from_template(template)
-
-        chain = (
-            {"context": RunnablePassthrough()} | prompt | self.model | StrOutputParser()
-        )
-
-        result = await chain.ainvoke(context)
-        return result
+        return structured_data.get("items", [])

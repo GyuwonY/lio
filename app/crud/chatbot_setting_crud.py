@@ -4,7 +4,7 @@ import json
 from fastapi import Depends
 
 from app.models.chatbot_setting import ChatbotSetting
-from app.schemas.chatbot_setting import ChatbotSettingUpdate
+from app.schemas.chatbot_setting_schema import ChatbotSettingUpdate
 from app.models.user import User
 from app.db.session import get_db
 

@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import Depends
 
 from app.models.user import User
-from app.schemas.user import UserCreate
+from app.schemas.user_schema import UserCreate
 from app.db.session import get_db
 
 

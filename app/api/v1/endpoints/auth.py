@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Body
-from app.schemas.token import Token
+from app.schemas.token_schema import Token
 from app.models.user import User
 from app.services.auth_service import AuthService, get_current_user_from_refresh_token
 

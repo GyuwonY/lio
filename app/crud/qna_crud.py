@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import Depends
 
 from app.models.qna import QnA
-from app.schemas.qna import QnAUpdate
+from app.schemas.qna_schema import QnAUpdate
 from app.models.user import User
 from app.db.session import get_db
 

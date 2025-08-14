@@ -3,30 +3,17 @@ from contextlib import asynccontextmanager
 
 from app.api.v1.api import api_router
 from app.core.config import settings
-from app.db.session import async_engine, Base, weaviate_client
-from app.services.rag_service import RAGService
+from app.db.session import async_engine, Base
 import uvicorn
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    # Connect to Weaviate
-    await weaviate_client.connect()
-
     # Create DB tables
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-
-    # Create Weaviate schema
-    rag_service = RAGService(weaviate_client=weaviate_client)
-    await rag_service.create_weaviate_schema_if_not_exists()
-
     yield
-
-    # Shutdown
-    # Close Weaviate connection
-    await weaviate_client.close()
 
 
 app = FastAPI(
