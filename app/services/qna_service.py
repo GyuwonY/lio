@@ -1,4 +1,3 @@
-import re
 from typing import List
 from fastapi import HTTPException, status, Depends
 
@@ -26,7 +25,7 @@ class QnAService:
     ) -> dict:
 
         return {
-            "message": f"Q&A pairs have been generated successfully."
+            "message": "Q&A pairs have been generated successfully."
         }
 
     async def update_qna(

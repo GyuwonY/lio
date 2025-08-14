@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, Body, HTTPException
 
-from app.db.session import get_db
 from app.services.agent_service import AgentService
 
 

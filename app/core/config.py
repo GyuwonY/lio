@@ -15,9 +15,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_SECRET_KEY: str = Field(..., env="ACCESS_TOKEN_SECRET_KEY")
     REFRESH_TOKEN_SECRET_KEY: str = Field(..., env="REFRESH_TOKEN_SECRET_KEY")
     JWT_ALGORITHM: str = Field("HS256", env="JWT_ALGORITHM")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(60, env="ACCESS_TOKEN_EXPIRE_MINUTES")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(60 * 24, env="ACCESS_TOKEN_EXPIRE_MINUTES")
     REFRESH_TOKEN_EXPIRE_MINUTES: int = Field(
-        60 * 24 * 7, env="REFRESH_TOKEN_EXPIRE_MINUTES"
+        60 * 24 * 14, env="REFRESH_TOKEN_EXPIRE_MINUTES"
     )
 
     # Google Auth

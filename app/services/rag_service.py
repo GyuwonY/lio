@@ -56,12 +56,12 @@ class RAGService:
     async def embed_portfolio_items(self, items_data: List[Dict[str, Any]]) -> List[List[float]]:
         texts_to_embed = []
         for item in items_data:
-            full_text = f"유형: {item['item_type']}\n"
+            full_text = f"type: {item['item_type']}\n"
             if item.get('topic'):
-                full_text += f"주제: {item['topic']}\n"
+                full_text += f"topic: {item['topic']}\n"
             if item.get('period'):
-                full_text += f"기간: {item['period']}\n"
-            full_text += f"내용: {item['content']}"
+                full_text += f"period: {item['period']}\n"
+            full_text += f"content: {item['content']}"
             texts_to_embed.append(full_text)
         if not texts_to_embed:
             return []
