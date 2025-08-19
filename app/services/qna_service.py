@@ -23,10 +23,7 @@ class QnAService:
     async def generate_qna_from_portfolios(
         self, *, portfolio_ids: list[int], current_user: User
     ) -> dict:
-
-        return {
-            "message": "Q&A pairs have been generated successfully."
-        }
+        return {"message": "Q&A pairs have been generated successfully."}
 
     async def update_qna(
         self, *, qna_id: int, qna_in: QnAUpdate, current_user: User

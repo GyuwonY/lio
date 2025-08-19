@@ -16,7 +16,8 @@ class PortfolioStatus(Enum):
     DELETED = "DELETED"
     PENDING = "PENDING"
     CONFIRMED = "CONFIRMED"
-    
+
+
 class PortfolioSourceType(Enum):
     PDF = "PDF"
     TEXT = "TEXT"
@@ -24,14 +25,19 @@ class PortfolioSourceType(Enum):
 
 class Portfolio(Base):
     """포트폴리오 제출 세션 또는 원본 문서를 나타내는 모델"""
+
     __tablename__ = "portfolios"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
-    
-    status: Mapped[PortfolioStatus] = mapped_column(SQLAlchemyEnum(PortfolioStatus), nullable=False, default=PortfolioStatus.PENDING)
-    
-    source_type: Mapped[PortfolioSourceType] = mapped_column(SQLAlchemyEnum(PortfolioSourceType), nullable=False)
+
+    status: Mapped[PortfolioStatus] = mapped_column(
+        SQLAlchemyEnum(PortfolioStatus), nullable=False, default=PortfolioStatus.PENDING
+    )
+
+    source_type: Mapped[PortfolioSourceType] = mapped_column(
+        SQLAlchemyEnum(PortfolioSourceType), nullable=False
+    )
     source_url: Mapped[str] = mapped_column(String(1024), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
@@ -42,4 +48,3 @@ class Portfolio(Base):
     items: Mapped[List["PortfolioItem"]] = relationship(
         back_populates="portfolio", cascade="all, delete-orphan"
     )
-

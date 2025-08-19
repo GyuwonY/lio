@@ -28,7 +28,7 @@ class RAGService:
     ):
         self.db = db
         self.storage_service = storage_service
-        
+
         self.embeddings_model = GoogleGenerativeAIEmbeddings(
             model=settings.EMBEDDING_MODEL,
             google_api_key=settings.GEMINI_API_KEY,
@@ -36,7 +36,7 @@ class RAGService:
 
     async def extract_text_from_gcs_pdf(self, gcs_url: str) -> str:
         file_bytes = await self.storage_service.download_as_bytes(gcs_url)
-        
+
         tmp_path = ""
         try:
             # Create a temporary file to store the PDF
@@ -53,15 +53,19 @@ class RAGService:
             if tmp_path and os.path.exists(tmp_path):
                 os.remove(tmp_path)
 
-    async def embed_portfolio_items(self, items_data: List[Dict[str, Any]]) -> List[List[float]]:
+    async def embed_portfolio_items(
+        self, items: List[PortfolioItem]
+    ) -> List[List[float]]:
         texts_to_embed = []
-        for item in items_data:
-            full_text = f"type: {item['item_type']}\n"
-            if item.get('topic'):
-                full_text += f"topic: {item['topic']}\n"
-            if item.get('period'):
-                full_text += f"period: {item['period']}\n"
-            full_text += f"content: {item['content']}"
+        for item in items:
+            full_text = f"type: {item.type}\n"
+            if item.topic:
+                full_text += f"topic: {item.topic}\n"
+            if item.start_date:
+                full_text += f"start_date: {item.start_date}\n"
+            if item.end_date:
+                full_text += f"end_date: {item.end_date}\n"
+            full_text += f"content: {item.content}"
             texts_to_embed.append(full_text)
         if not texts_to_embed:
             return []

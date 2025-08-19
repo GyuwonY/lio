@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     # API
     API_V1_STR: str = Field("/api/v1", env="API_V1_STR")
-    
+
     # Model
     EMBEDDING_MODEL: str = Field("gemini-embedding-001", env="EMBEDDING_MODEL")
     LLM_MODEL: str = Field("gemini-2.5-flash", env="LLM_MODEL")

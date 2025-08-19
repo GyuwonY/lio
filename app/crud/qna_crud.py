@@ -24,7 +24,7 @@ class QnACRUD:
     async def create_qna(self, *, question: str, answer: str, user: User) -> QnA:
         db_qna = QnA(question=question, answer=answer, user_id=user.id)
         self.db.add(db_qna)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(db_qna)
         return db_qna
 
@@ -34,6 +34,6 @@ class QnACRUD:
             setattr(db_obj, field, value)
 
         self.db.add(db_obj)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(db_obj)
         return db_obj

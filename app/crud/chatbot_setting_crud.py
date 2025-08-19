@@ -25,7 +25,7 @@ class ChatbotSettingCRUD:
         if not setting:
             setting = ChatbotSetting(user_id=user.id, tone_examples=json.dumps([]))
             self.db.add(setting)
-            await self.db.commit()
+            await self.db.flush()
             await self.db.refresh(setting)
         return setting
 
@@ -39,6 +39,6 @@ class ChatbotSettingCRUD:
             db_obj.tone_examples = json.dumps(obj_in.tone_examples)
 
         self.db.add(db_obj)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(db_obj)
         return db_obj
