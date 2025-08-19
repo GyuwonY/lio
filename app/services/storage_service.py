@@ -23,25 +23,26 @@ class StorageService:
         self.bucket_name = settings.GCS_BUCKET_NAME
         self.bucket = self.storage_client.bucket(self.bucket_name)
 
-    async def generate_upload_url(self, user_id: int, file_name: str) -> tuple[str, str]:
+    async def generate_upload_url(
+        self, user_id: int, file_name: str
+    ) -> tuple[str, str]:
         """
         Generates a presigned URL for uploading a file to GCS.
         """
         blob_name = f"user_{user_id}/{uuid.uuid4()}/{file_name}"
         blob = self.bucket.blob(blob_name)
-        
+
         MIN_UPLOAD_SIZE = 1 * 1024  # 1 KB
         MAX_UPLOAD_SIZE = 30 * 1024 * 1024  # 30 MB
-        
-        conditions = [
-            ["content-length-range", MIN_UPLOAD_SIZE, MAX_UPLOAD_SIZE]
-        ]
+
+        content_length_range = f"{MIN_UPLOAD_SIZE},{MAX_UPLOAD_SIZE}"
+        extension_headers = {"x-goog-content-length-range": content_length_range}
 
         url = blob.generate_signed_url(
             version="v4",
             expiration=timedelta(minutes=15),
             method="POST",
-            conditions=conditions
+            headers=extension_headers,
         )
 
         object_url = f"gs://{self.bucket_name}/{blob_name}"
@@ -53,12 +54,14 @@ class StorageService:
         """
         if not gcs_url.startswith(f"gs://{self.bucket_name}/"):
             raise ValueError("Invalid GCS URL for this bucket.")
-            
+
         blob_name = gcs_url.replace(f"gs://{self.bucket_name}/", "")
         blob = self.bucket.blob(blob_name)
-        
+
         try:
             return blob.download_as_bytes()
         except Exception as e:
             print(f"Error downloading file {gcs_url}: {e}")
-            raise FileNotFoundError(f"File not found or access denied: {gcs_url}") from e
+            raise FileNotFoundError(
+                f"File not found or access denied: {gcs_url}"
+            ) from e

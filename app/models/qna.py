@@ -12,8 +12,9 @@ from app.models.user import User
 
 
 class QnAStatus(enum.Enum):
-    DRAFT = "draft"
-    CONFIRMED = "confirmed"
+    PENDING = "PENDING"
+    CONFIRMED = "CONFIRMED"
+    DELETED = "DELETED"
 
 
 class QnA(Base):
@@ -28,7 +29,7 @@ class QnA(Base):
     embedding = mapped_column(Vector(768), nullable=True)
 
     status: Mapped[QnAStatus] = mapped_column(
-        Enum(QnAStatus), default=QnAStatus.DRAFT, nullable=False
+        Enum(QnAStatus), default=QnAStatus.PENDING, nullable=False
     )
 
     user_id: Mapped[int] = mapped_column(
@@ -37,6 +38,10 @@ class QnA(Base):
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
+    )
+    
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
     user: Mapped[User] = relationship(back_populates="qnas")

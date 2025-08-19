@@ -1,55 +1,74 @@
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel
 from datetime import datetime
-from enum import Enum
 from typing import List, Optional
+from app.models.portfolio_item import PortfolioItemType
+from app.models.portfolio import PortfolioStatus
 
-class PortfolioType(str, Enum):
-    INTRODUCTION = "INTRODUCTION"
-    EXPERIENCE = "EXPERIENCE"
-    PROJECT = "PROJECT"
-    SKILLS = "SKILLS"
-    EDUCATION = "EDUCATION"
 
 # PortfolioItem 관련 스키마
 class PortfolioItemBase(BaseModel):
-    item_type: PortfolioType
+    type: PortfolioItemType
     topic: Optional[str] = None
-    period: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
     content: str
+
 
 class PortfolioItemCreate(PortfolioItemBase):
     pass
+
 
 class PortfolioItemRead(PortfolioItemBase):
     id: int
     portfolio_id: int
     created_at: datetime
 
+
+class PortfolioItemUpdate(BaseModel):
+    id: int
+    type: PortfolioItemType
+    topic: str
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    content: str
+
+
+class PortfolioItemsUpdate(BaseModel):
+    items: List[PortfolioItemUpdate]
+
+
 # Portfolio (컨테이너) 관련 스키마
 class PortfolioBase(BaseModel):
     pass
 
-class PortfolioCreate(PortfolioBase):
-    """포트폴리오 생성을 위한 요청 스키마"""
-    file_url: Optional[str] = None
-    text_items: Optional[List[PortfolioItemCreate]] = None
 
-    @field_validator('text_items', mode='before')
-    def check_exclusive_fields(cls, v, values):
-        if values.data.get('file_url') and v:
-            raise ValueError("file_url과 text_items는 함께 사용할 수 없습니다.")
-        if not values.data.get('file_url') and not v:
-            raise ValueError("file_url 또는 text_items 중 하나는 반드시 필요합니다.")
-        return v
+class PortfolioCreateFromText(PortfolioBase):
+    """텍스트 입력을 통한 포트폴리오 생성을 위한 요청 스키마"""
+
+    text_items: List[PortfolioItemCreate]
+
+
+class PortfolioCreateWithPdf(PortfolioBase):
+    """PDF 업로드를 통한 포트폴리오 생성을 위한 내부 사용 스키마"""
+
+    file_path: str
+
 
 class PortfolioRead(PortfolioBase):
     """포트폴리오 조회를 위한 스키마 (API 응답용)"""
+
     id: int
     user_id: int
+    status: PortfolioStatus
     source_type: str
-    source_identifier: Optional[str] = None
+    source_url: Optional[str] = None
     created_at: datetime
     items: List[PortfolioItemRead] = []
+
+
+class PortfolioConfirm(BaseModel):
+    portfolio_id: int
+
 
 # 기타 유틸리티 스키마
 class UploadURLResponse(BaseModel):

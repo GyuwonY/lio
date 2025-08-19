@@ -1,4 +1,3 @@
-import re
 from typing import List
 from fastapi import HTTPException, status, Depends
 
@@ -18,16 +17,13 @@ class QnAService:
         self.crud = crud
         self.llm_service = llm_service
 
-    async def get_user_qnas(self, *, current_user: User) -> List[QnA]:
+    async def get_qnas_by_portfolio(self, *, current_user: User, portfolio_id: int) -> List[QnA]:
         return await self.crud.get_qnas_by_user(user=current_user)
 
     async def generate_qna_from_portfolios(
-        self, *, portfolio_ids: list[int], current_user: User
+        self, *, portfolio_id: int, current_user: User
     ) -> dict:
-
-        return {
-            "message": f"Q&A pairs have been generated successfully."
-        }
+        return {"message": "Q&A pairs have been generated successfully."}
 
     async def update_qna(
         self, *, qna_id: int, qna_in: QnAUpdate, current_user: User

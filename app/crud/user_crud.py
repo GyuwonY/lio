@@ -22,6 +22,6 @@ class UserCRUD:
             full_name=user_in.full_name,
         )
         self.db.add(db_obj)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(db_obj)
         return db_obj

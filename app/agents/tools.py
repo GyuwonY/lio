@@ -65,7 +65,7 @@ class RAGServiceRetriever(BaseRetriever):
                 page_content = f"Q: {item.question}\nA: {item.answer}"
                 metadata["type"] = "qna"
                 metadata["qna_id"] = item.id
-            
+
             documents.append(Document(page_content=page_content, metadata=metadata))
 
         return documents
