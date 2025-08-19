@@ -17,6 +17,7 @@ class PortfolioItemType(str, Enum):
     PROJECT = "PROJECT"
     SKILLS = "SKILLS"
     EDUCATION = "EDUCATION"
+    CONTACT = "CONTACT"
 
 
 class PortfolioItemStatus(Enum):

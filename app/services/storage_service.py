@@ -35,13 +35,14 @@ class StorageService:
         MIN_UPLOAD_SIZE = 1 * 1024  # 1 KB
         MAX_UPLOAD_SIZE = 30 * 1024 * 1024  # 30 MB
 
-        conditions = [["content-length-range", MIN_UPLOAD_SIZE, MAX_UPLOAD_SIZE]]
+        content_length_range = f"{MIN_UPLOAD_SIZE},{MAX_UPLOAD_SIZE}"
+        extension_headers = {"x-goog-content-length-range": content_length_range}
 
         url = blob.generate_signed_url(
             version="v4",
             expiration=timedelta(minutes=15),
             method="POST",
-            conditions=conditions,
+            headers=extension_headers,
         )
 
         object_url = f"gs://{self.bucket_name}/{blob_name}"

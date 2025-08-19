@@ -10,10 +10,6 @@ class QnABase(BaseModel):
     answer: Optional[str] = None
 
 
-class QnACreate(BaseModel):
-    portfolio_ids: List[int]
-
-
 class QnAUpdate(BaseModel):
     question: Optional[str] = None
     answer: Optional[str] = None

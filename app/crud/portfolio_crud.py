@@ -63,7 +63,7 @@ class PortfolioCRUD:
         db_portfolio = Portfolio(
             user_id=user_id,
             source_type=source_type,
-            source_identifier=source_url,
+            source_url=source_url,
             status=status,
             items = items
         )

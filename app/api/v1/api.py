@@ -5,12 +5,12 @@ api_router = APIRouter()
 
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 
-api_router.include_router(portfolio.router, prefix="/portfolios", tags=["Portfolios"])
+api_router.include_router(portfolio.router, prefix="/portfolio", tags=["Portfolio"])
 
 api_router.include_router(qna.router, prefix="/qna", tags=["Q&A and Chat"])
 
 api_router.include_router(
-    chatbot_setting.router, prefix="/chatbot-settings", tags=["Chatbot Settings"]
+    chatbot_setting.router, prefix="/chatbot-setting", tags=["Chatbot Setting"]
 )
 
 api_router.include_router(chat.router, prefix="/chat", tags=["Chat"])

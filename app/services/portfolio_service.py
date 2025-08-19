@@ -65,7 +65,6 @@ class PortfolioService:
     ) -> Portfolio:
         """PDF 파일에서 텍스트를 추출하고 구조화하여 PENDING 상태의 포트폴리오를 생성합니다."""
         try:
-            # 1. GCS에서 PDF 텍스트 추출
             text = await self.rag_service.extract_text_from_gcs_pdf(
                 gcs_url=portfolio_in.file_path
             )
@@ -75,7 +74,6 @@ class PortfolioService:
                     detail="PDF 파일에서 텍스트를 추출할 수 없습니다.",
                 )
 
-            # 2. LLM으로 텍스트 구조화
             structured_items = await self.llm_service.structure_portfolio_from_text(
                 text=text
             )
@@ -87,7 +85,7 @@ class PortfolioService:
 
             items = [PortfolioItem(
                 type = item.type,
-                status = PortfolioItemStatus.CONFIRMED,
+                status = PortfolioItemStatus.PENDING,
                 topic = item.topic,
                 start_date = item.start_date,
                 end_date = item.end_date,
@@ -139,6 +137,7 @@ class PortfolioService:
 
         for item, embedding in zip(portfolio.items, embeddings):
             item.embedding = embedding
+            item.status = PortfolioItemStatus.CONFIRMED
         
         return portfolio
 
@@ -156,7 +155,7 @@ class PortfolioService:
         
         items_to_re_embed = []
         for item in portfolio_items:
-            if item.content != item_update_dict[item.id].content:
+            if item.status == PortfolioItemStatus.CONFIRMED and item.content != item_update_dict[item.id].content:
                 items_to_re_embed.append(item)
                 
         if items_to_re_embed:

@@ -61,7 +61,7 @@ class PortfolioRead(PortfolioBase):
     user_id: int
     status: PortfolioStatus
     source_type: str
-    source_identifier: Optional[str] = None
+    source_url: Optional[str] = None
     created_at: datetime
     items: List[PortfolioItemRead] = []
 

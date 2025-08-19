@@ -1,9 +1,7 @@
-# app/services/rag_service.py
-
 import asyncio
 import os
 import tempfile
-from typing import Any, List, Dict
+from typing import Any, List
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,9 +10,8 @@ from sqlalchemy.future import select
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-from app.core.config import settings
 from app.services.storage_service import StorageService
-from app.db.session import get_db
+from app.db.session import get_db, get_embeddings_model
 from app.models.portfolio import Portfolio
 from app.models.portfolio_item import PortfolioItem
 from app.models.qna import QnA
@@ -25,14 +22,11 @@ class RAGService:
         self,
         db: AsyncSession = Depends(get_db),
         storage_service: StorageService = Depends(),
+        embeddings_model: GoogleGenerativeAIEmbeddings = Depends(get_embeddings_model),
     ):
         self.db = db
         self.storage_service = storage_service
-
-        self.embeddings_model = GoogleGenerativeAIEmbeddings(
-            model=settings.EMBEDDING_MODEL,
-            google_api_key=settings.GEMINI_API_KEY,
-        )
+        self.embeddings_model = embeddings_model
 
     async def extract_text_from_gcs_pdf(self, gcs_url: str) -> str:
         file_bytes = await self.storage_service.download_as_bytes(gcs_url)
@@ -44,9 +38,10 @@ class RAGService:
                 tmpfile.write(file_bytes)
                 tmp_path = tmpfile.name
 
-            # Load the PDF from the temporary file path
+            # Load the PDF using UnstructuredPDFLoader's async method
             loader = PyPDFLoader(tmp_path)
-            documents = await asyncio.to_thread(loader.load)
+            loop = asyncio.get_running_loop()
+            documents = await loop.run_in_executor(None, loader.load)
             return " ".join([doc.page_content for doc in documents])
         finally:
             # Clean up the temporary file
@@ -54,7 +49,8 @@ class RAGService:
                 os.remove(tmp_path)
 
     async def embed_portfolio_items(
-        self, items: List[PortfolioItem]
+        self,
+        items: List[PortfolioItem]
     ) -> List[List[float]]:
         texts_to_embed = []
         for item in items:
@@ -69,7 +65,10 @@ class RAGService:
             texts_to_embed.append(full_text)
         if not texts_to_embed:
             return []
-        return await self.embeddings_model.aembed_documents(texts_to_embed)
+        return await self.embeddings_model.aembed_documents(
+            texts = texts_to_embed, 
+            output_dimensionality=768
+        )
 
     async def similarity_search(
         self,
@@ -78,7 +77,10 @@ class RAGService:
         top_k: int = 5,
         search_type: str = "all",
     ) -> List[Any]:
-        query_embedding = await self.embeddings_model.aembed_query(query_text)
+        query_embedding = await self.embeddings_model.aembed_query(
+            text = query_text,
+            output_dimensionality=768
+        )
 
         results = []
         if search_type in ["portfolio", "all"]:

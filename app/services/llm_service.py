@@ -13,7 +13,7 @@ from app.models.portfolio_item import PortfolioItemType
 # Pydantic 모델 정의
 class PortfolioItemPydantic(BaseModel):
     type: PortfolioItemType = Field(
-        description="항목 유형 (INTRODUCTION, EXPERIENCE, PROJECT, SKILLS, EDUCATION 중 하나)"
+        description="항목 유형 (INTRODUCTION, EXPERIENCE, PROJECT, SKILLS, EDUCATION, CONTACT 중 하나)"
     )
     topic: Optional[str] = Field(None, description="회사명, 프로젝트명 등 항목의 주제")
     start_date: Optional[date] = Field(
@@ -33,7 +33,6 @@ class PortfolioPydantic(BaseModel):
     items: List[PortfolioItemPydantic]
 
 
-# RAGService에서 프롬프트를 이곳으로 이동
 STRUCTURE_PORTFOLIO_PROMPT = """
 당신은 HR 전문가입니다. 주어진 포트폴리오 원본 텍스트에서 정보를 추출하고 구조화해주세요.
 
@@ -44,7 +43,6 @@ STRUCTURE_PORTFOLIO_PROMPT = """
 {text}
 ---
 """
-
 
 class LLMService:
     def __init__(self):

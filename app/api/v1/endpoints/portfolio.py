@@ -26,7 +26,7 @@ async def get_upload_url(
 ) -> UploadURLResponse:
     """
     GCS에 포트폴리오 파일(PDF)을 업로드하기 위한 Presigned URL을 생성합니다.
-    """
+    """ 
     if not file_name.lower().endswith(".pdf"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
