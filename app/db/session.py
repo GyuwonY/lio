@@ -26,9 +26,9 @@ async def get_db():
             await session.rollback()
             raise
 
+
 async def get_embeddings_model() -> GoogleGenerativeAIEmbeddings:
     return GoogleGenerativeAIEmbeddings(
         model=settings.EMBEDDING_MODEL,
         google_api_key=settings.GEMINI_API_KEY,
     )
-    

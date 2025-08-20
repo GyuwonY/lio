@@ -49,8 +49,7 @@ class RAGService:
                 os.remove(tmp_path)
 
     async def embed_portfolio_items(
-        self,
-        items: List[PortfolioItem]
+        self, items: List[PortfolioItem]
     ) -> List[List[float]]:
         texts_to_embed = []
         for item in items:
@@ -66,8 +65,20 @@ class RAGService:
         if not texts_to_embed:
             return []
         return await self.embeddings_model.aembed_documents(
-            texts = texts_to_embed, 
-            output_dimensionality=768
+            texts=texts_to_embed, output_dimensionality=768
+        )
+        
+    async def embed_qnas(
+        self, qnas: List[QnA]
+    ) -> List[List[float]]:
+        texts_to_embed = []
+        for qna in qnas:
+            full_text = f"question: {qna.question}\n answer: {qna.answer}"
+            texts_to_embed.append(full_text)
+        if not texts_to_embed:
+            return []
+        return await self.embeddings_model.aembed_documents(
+            texts=texts_to_embed, output_dimensionality=768
         )
 
     async def similarity_search(
@@ -78,8 +89,7 @@ class RAGService:
         search_type: str = "all",
     ) -> List[Any]:
         query_embedding = await self.embeddings_model.aembed_query(
-            text = query_text,
-            output_dimensionality=768
+            text=query_text, output_dimensionality=768
         )
 
         results = []

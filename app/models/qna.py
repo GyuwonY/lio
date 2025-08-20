@@ -8,6 +8,7 @@ from sqlalchemy.sql import func
 from pgvector.sqlalchemy import Vector
 
 from app.db.session import Base
+from app.models.portfolio_item import PortfolioItem
 from app.models.user import User
 
 
@@ -24,7 +25,7 @@ class QnA(Base):
 
     question: Mapped[str] = mapped_column(Text, nullable=False)
 
-    answer: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    answer: Mapped[str] = mapped_column(Text, nullable=False)
 
     embedding = mapped_column(Vector(768), nullable=True)
 
@@ -36,12 +37,17 @@ class QnA(Base):
         Integer, ForeignKey("users.id"), nullable=False
     )
 
+    portfolio_item_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("portfolio_items.id"), nullable=False
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
-    
+
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    user: Mapped[User] = relationship(back_populates="qnas")
+    user: Mapped[User] = relationship()
+    portfolio_item: Mapped[PortfolioItem] = relationship(back_populates="qnas")

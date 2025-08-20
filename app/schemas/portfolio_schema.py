@@ -12,6 +12,7 @@ class PortfolioItemBase(BaseModel):
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     content: str
+    tech_stack: Optional[List[str]] = None
 
 
 class PortfolioItemCreate(PortfolioItemBase):
@@ -31,13 +32,13 @@ class PortfolioItemUpdate(BaseModel):
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     content: str
+    tech_stack: Optional[List[str]] = None
 
 
 class PortfolioItemsUpdate(BaseModel):
     items: List[PortfolioItemUpdate]
 
 
-# Portfolio (컨테이너) 관련 스키마
 class PortfolioBase(BaseModel):
     pass
 
@@ -70,7 +71,6 @@ class PortfolioConfirm(BaseModel):
     portfolio_id: int
 
 
-# 기타 유틸리티 스키마
 class UploadURLResponse(BaseModel):
     upload_url: str
     file_path: str

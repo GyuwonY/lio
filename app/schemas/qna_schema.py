@@ -1,25 +1,28 @@
-from pydantic import BaseModel, ConfigDict
-from datetime import datetime
-from typing import Optional, List
+from pydantic import BaseModel
+from typing import List
 
 from app.models.qna import QnAStatus
 
 
 class QnABase(BaseModel):
     question: str
-    answer: Optional[str] = None
+    answer: str
 
 
 class QnAUpdate(BaseModel):
-    question: Optional[str] = None
-    answer: Optional[str] = None
-    status: Optional[QnAStatus] = None
+    id: int
+    question: str
+    answer: str
 
 
 class QnARead(QnABase):
     id: int
     status: QnAStatus
-    user_id: int
-    created_at: datetime
+    portfolio_item_id: int
 
-    model_config = ConfigDict(from_attributes=True)
+
+class QnACreate(QnABase):
+    portfolio_item_id: int
+
+class QnAsUpdate(BaseModel):
+    qnas: List[QnAUpdate]

@@ -3,6 +3,7 @@ from fastapi import Depends, HTTPException, status
 
 from app.crud.portfolio_crud import PortfolioCRUD
 from app.models.portfolio_item import PortfolioItem, PortfolioItemStatus
+from app.schemas.llm_schema import LLMPortfolio
 from app.schemas.portfolio_schema import (
     PortfolioCreateFromText,
     PortfolioCreateWithPdf,
@@ -29,21 +30,24 @@ class PortfolioService:
     async def create_portfolio_from_text(
         self, *, portfolio_in: PortfolioCreateFromText, current_user: User
     ) -> Portfolio:
-        """텍스트 입력을 받아 포트폴리오를 생성하고 바로 확정(CONFIRMED)합니다."""
         if not portfolio_in.text_items:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="포트폴리오로 생성할 데이터가 없습니다.",
             )
 
-        items = [PortfolioItem(
-            type = item.type,
-            status = PortfolioItemStatus.CONFIRMED,
-            topic = item.topic,
-            start_date = item.start_date,
-            end_date = item.end_date,
-            content = item.content,
-        ) for item in portfolio_in.text_items]
+        items = [
+            PortfolioItem(
+                type=item.type,
+                status=PortfolioItemStatus.CONFIRMED,
+                topic=item.topic,
+                start_date=item.start_date,
+                end_date=item.end_date,
+                content=item.content,
+                tech_stack=item.tech_stack,
+            )
+            for item in portfolio_in.text_items
+        ]
 
         embeddings = await self.rag_service.embed_portfolio_items(items=items)
 
@@ -63,7 +67,6 @@ class PortfolioService:
     async def create_portfolio_from_pdf(
         self, *, portfolio_in: PortfolioCreateWithPdf, current_user: User
     ) -> Portfolio:
-        """PDF 파일에서 텍스트를 추출하고 구조화하여 PENDING 상태의 포트폴리오를 생성합니다."""
         try:
             text = await self.rag_service.extract_text_from_gcs_pdf(
                 gcs_url=portfolio_in.file_path
@@ -74,24 +77,29 @@ class PortfolioService:
                     detail="PDF 파일에서 텍스트를 추출할 수 없습니다.",
                 )
 
-            structured_items = await self.llm_service.structure_portfolio_from_text(
+            llm_output_str = await self.llm_service.structure_portfolio_from_text(
                 text=text
             )
+            structured_items = LLMPortfolio.model_validate_json(llm_output_str)
+            
             if not structured_items:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="LLM이 텍스트를 구조화하지 못했습니다.",
                 )
 
-            items = [PortfolioItem(
-                type = item.type,
-                status = PortfolioItemStatus.PENDING,
-                topic = item.topic,
-                start_date = item.start_date,
-                end_date = item.end_date,
-                content = item.content,
-            ) for item in structured_items]
-
+            items = [
+                PortfolioItem(
+                    type=item.type,
+                    status=PortfolioItemStatus.PENDING,
+                    topic=item.topic,
+                    start_date=item.start_date,
+                    end_date=item.end_date,
+                    content=item.content,
+                    tech_stack=item.tech_stack,
+                )
+                for item in structured_items.items
+            ]
 
             created_portfolio = await self.crud.create_portfolio(
                 user_id=current_user.id,
@@ -116,7 +124,6 @@ class PortfolioService:
     async def confirm_portfolio(
         self, *, confirm_in: PortfolioConfirm, current_user: User
     ) -> Portfolio:
-        """PENDING 상태의 포트폴리오를 CONFIRMED로 변경하고 임베딩을 저장합니다."""
         portfolio = await self.crud.get_portfolio_by_id(
             portfolio_id=confirm_in.portfolio_id, user_id=current_user.id
         )
@@ -131,36 +138,43 @@ class PortfolioService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="이미 확정된 포트폴리오입니다.",
             )
-            
+
         portfolio.status = PortfolioStatus.CONFIRMED
         embeddings = await self.rag_service.embed_portfolio_items(items=portfolio.items)
 
         for item, embedding in zip(portfolio.items, embeddings):
             item.embedding = embedding
             item.status = PortfolioItemStatus.CONFIRMED
-        
+
         return portfolio
 
     async def get_user_portfolios(self, *, current_user: User) -> List[Portfolio]:
-        """사용자의 모든 포트폴리오 목록을 조회합니다."""
         return await self.crud.get_portfolios_by_user(user_id=current_user.id)
 
     async def update_portfolio_items(
         self, *, items_in: PortfolioItemsUpdate, current_user: User
     ) -> List[PortfolioItem]:
         item_ids = [item.id for item in items_in.items]
-        portfolio_items = await self.crud.get_portfolio_item_by_ids(portfolio_item_ids=item_ids)
+        portfolio_items = await self.crud.get_portfolio_item_by_ids(
+            portfolio_item_ids=item_ids
+        )
         item_update_dict = {item.id: item for item in items_in.items}
-        
-        
+
         items_to_re_embed = []
         for item in portfolio_items:
-            if item.status == PortfolioItemStatus.CONFIRMED and item.content != item_update_dict[item.id].content:
+            if (
+                item.status == PortfolioItemStatus.CONFIRMED
+                and item.content != item_update_dict[item.id].content
+            ):
                 items_to_re_embed.append(item)
-                
+
         if items_to_re_embed:
-            embeddings = await self.rag_service.embed_portfolio_items(items=items_to_re_embed)
-            embedding_map = {item.id: emb for item, emb in zip(items_to_re_embed, embeddings)}
+            embeddings = await self.rag_service.embed_portfolio_items(
+                items=items_to_re_embed
+            )
+            embedding_map = {
+                item.id: emb for item, emb in zip(items_to_re_embed, embeddings)
+            }
         else:
             embedding_map = {}
 
@@ -168,18 +182,21 @@ class PortfolioService:
             item_update = item_update_dict[item.id]
             if embedding_map.get(item.id):
                 item.embedding = embedding_map[item.id]
-                
+
             item.content = item_update.content
-            item.start_date = item_update.start_date if item_update.start_date else item.start_date
-            item.end_date = item_update.end_date if item_update.end_date else item.end_date
+            item.start_date = (
+                item_update.start_date if item_update.start_date else item.start_date
+            )
+            item.end_date = (
+                item_update.end_date if item_update.end_date else item.end_date
+            )
             item.topic = item_update.topic
             item.type = item_update.type
-            
-            
+            item.tech_stack = item_update.tech_stack
+
         return portfolio_items
 
     async def delete_portfolio(self, *, portfolio_id: int, current_user: User) -> None:
-        """포트폴리오를 삭제합니다."""
         deleted = await self.crud.delete_portfolio(
             portfolio_id=portfolio_id, user_id=current_user.id
         )
@@ -193,7 +210,6 @@ class PortfolioService:
     async def delete_portfolio_items(
         self, *, portfolio_item_ids: List[int], current_user: User
     ) -> None:
-        """포트폴리오를 삭제합니다."""
         deleted = await self.crud.delete_portfolio_items(
             portfolio_item_ids=portfolio_item_ids
         )

@@ -1,11 +1,21 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import String, DateTime, ForeignKey, Text, Enum as SQLAlchemyEnum, Date
+from sqlalchemy import (
+    String,
+    DateTime,
+    ForeignKey,
+    Text,
+    Enum as SQLAlchemyEnum,
+    Date,
+    ARRAY,
+)
 from app.db.session import Base
 from datetime import datetime, date
 from typing import TYPE_CHECKING, List, Optional
 from enum import Enum
+
+from app.models.qna import QnA
 
 if TYPE_CHECKING:
     from app.models.portfolio import Portfolio
@@ -45,10 +55,13 @@ class PortfolioItem(Base):
         default=PortfolioItemStatus.PENDING,
     )
 
-    topic: Mapped[str] = mapped_column(String(255), nullable=True)
-    start_date: Mapped[date] = mapped_column(Date, nullable=True)
-    end_date: Mapped[date] = mapped_column(Date, nullable=True)
+    topic: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
+    tech_stack: Mapped[Optional[List[str]]] = mapped_column(
+        ARRAY(String), nullable=True
+    )
 
     embedding: Mapped[Optional[List[float]]] = mapped_column(Vector(768), nullable=True)
 
@@ -60,3 +73,4 @@ class PortfolioItem(Base):
     )
 
     portfolio: Mapped["Portfolio"] = relationship(back_populates="items")
+    qnas: Mapped["QnA"] = relationship(back_populates="portfolio_item")

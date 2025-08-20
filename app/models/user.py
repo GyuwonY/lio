@@ -10,7 +10,6 @@ from app.db.session import Base
 if TYPE_CHECKING:
     from app.models.chatbot_setting import ChatbotSetting
     from app.models.portfolio import Portfolio
-    from app.models.qna import QnA
 
 
 class User(Base):
@@ -29,5 +28,4 @@ class User(Base):
     )
 
     portfolios: Mapped[List["Portfolio"]] = relationship(back_populates="user")
-    qnas: Mapped[List["QnA"]] = relationship(back_populates="user")
     chatbot_setting: Mapped["ChatbotSetting"] = relationship(back_populates="user")

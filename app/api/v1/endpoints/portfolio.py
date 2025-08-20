@@ -26,7 +26,7 @@ async def get_upload_url(
 ) -> UploadURLResponse:
     """
     GCS에 포트폴리오 파일(PDF)을 업로드하기 위한 Presigned URL을 생성합니다.
-    """ 
+    """
     if not file_name.lower().endswith(".pdf"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -39,7 +39,7 @@ async def get_upload_url(
     return UploadURLResponse(upload_url=url, file_path=file_path)
 
 
-@router.post("/text", response_model=PortfolioRead, status_code=status.HTTP_201_CREATED)
+@router.post("/text", response_model=PortfolioRead)
 async def create_portfolio_from_text(
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
@@ -54,7 +54,7 @@ async def create_portfolio_from_text(
     )
 
 
-@router.post("/pdf", response_model=PortfolioRead, status_code=status.HTTP_201_CREATED)
+@router.post("/pdf", response_model=PortfolioRead)
 async def create_portfolio_from_pdf(
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
@@ -117,7 +117,7 @@ async def update_portfolio_items(
     return updated_portfolio
 
 
-@router.delete("/{portfolio_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{portfolio_id}")
 async def delete_portfolio(
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
@@ -127,11 +127,10 @@ async def delete_portfolio(
     """
     ID로 특정 포트폴리오를 삭제합니다.
     """
-    await service.delete_portfolio(portfolio_id=portfolio_id, current_user=current_user)
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return await service.delete_portfolio(portfolio_id=portfolio_id, current_user=current_user)
 
 
-@router.delete("/{portfolio_id}/items", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/items/{portfolio_item_ids}")
 async def delete_portfolio_items(
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
@@ -141,7 +140,6 @@ async def delete_portfolio_items(
     """
     ID로 특정 포트폴리오 item 삭제합니다.
     """
-    await service.delete_portfolio_items(
+    return await service.delete_portfolio_items(
         portfolio_item_ids=portfolio_item_ids, current_user=current_user
     )
-    return Response(status_code=status.HTTP_204_NO_CONTENT)

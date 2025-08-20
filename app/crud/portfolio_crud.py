@@ -65,7 +65,7 @@ class PortfolioCRUD:
             source_type=source_type,
             source_url=source_url,
             status=status,
-            items = items
+            items=items,
         )
 
         self.db.add(db_portfolio)
@@ -76,7 +76,6 @@ class PortfolioCRUD:
             portfolio_id=db_portfolio.id, user_id=user_id
         )
         return refreshed_portfolio
-
 
     async def delete_portfolio(self, *, portfolio_id: int, user_id: int) -> bool:
         db_portfolio = await self.get_portfolio_by_id(

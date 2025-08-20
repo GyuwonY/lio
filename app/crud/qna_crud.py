@@ -1,39 +1,45 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from typing import List, Optional
+from typing import List
 from fastapi import Depends
 
-from app.models.qna import QnA
-from app.schemas.qna_schema import QnAUpdate
-from app.models.user import User
+from app.models.qna import QnA, QnAStatus
+from app.schemas.qna_schema import QnACreate
 from app.db.session import get_db
+from app.models.portfolio_item import PortfolioItem
 
 
 class QnACRUD:
     def __init__(self, db: AsyncSession = Depends(get_db)):
         self.db = db
 
-    async def get_qna_by_id(self, *, qna_id: int) -> Optional[QnA]:
-        result = await self.db.execute(select(QnA).filter(QnA.id == qna_id))
-        return result.scalars().first()
 
-    async def get_qnas_by_user(self, *, user: User) -> List[QnA]:
-        result = await self.db.execute(select(QnA).filter(QnA.user_id == user.id))
+    async def get_qnas_by_portfolio_id(self, *, portfolio_id: int) -> List[QnA]:
+        stmt = (
+            select(QnA)
+            .join(PortfolioItem, QnA.portfolio_item_id == PortfolioItem.id)
+            .where(
+                PortfolioItem.portfolio_id == portfolio_id,
+                QnA.status != QnAStatus.DELETED,
+            )
+        )
+        result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
-    async def create_qna(self, *, question: str, answer: str, user: User) -> QnA:
-        db_qna = QnA(question=question, answer=answer, user_id=user.id)
-        self.db.add(db_qna)
-        await self.db.flush()
-        await self.db.refresh(db_qna)
-        return db_qna
 
-    async def update_qna(self, *, db_obj: QnA, obj_in: QnAUpdate) -> QnA:
-        update_data = obj_in.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
-            setattr(db_obj, field, value)
-
-        self.db.add(db_obj)
+    async def bulk_create_qnas(
+        self, *, qna_list: List[QnACreate], user_id: int
+    ) -> List[QnA]:
+        db_qnas = [QnA(**qna.model_dump(), user_id=user_id) for qna in qna_list]
+        self.db.add_all(db_qnas)
         await self.db.flush()
-        await self.db.refresh(db_obj)
-        return db_obj
+        return db_qnas
+
+
+    async def get_qnas_by_ids(self, *, ids: List[int]) -> List[QnA]:
+        result = await self.db.execute(
+            select(QnA)
+            .where(QnA.id.in_(ids))
+        )
+        return list(result.scalars().all())
+        

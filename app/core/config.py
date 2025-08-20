@@ -15,7 +15,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_SECRET_KEY: str = Field(..., env="ACCESS_TOKEN_SECRET_KEY")
     REFRESH_TOKEN_SECRET_KEY: str = Field(..., env="REFRESH_TOKEN_SECRET_KEY")
     JWT_ALGORITHM: str = Field("HS256", env="JWT_ALGORITHM")
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(60 * 24 * 30, env="ACCESS_TOKEN_EXPIRE_MINUTES")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
+        60 * 24 * 30, env="ACCESS_TOKEN_EXPIRE_MINUTES"
+    )
     REFRESH_TOKEN_EXPIRE_MINUTES: int = Field(
         60 * 24 * 14, env="REFRESH_TOKEN_EXPIRE_MINUTES"
     )
@@ -32,7 +34,12 @@ class Settings(BaseSettings):
 
     # Model
     EMBEDDING_MODEL: str = Field("gemini-embedding-001", env="EMBEDDING_MODEL")
-    LLM_MODEL: str = Field("gemini-2.5-flash-lite", env="LLM_MODEL")
+    PDF_PARSING_LLM_MODEL: str = Field(
+        "gemini-2.5-flash-lite", env="PDF_PARSING_LLM_MODEL"
+    )
+    GENERATE_QNA_LLM_MODEL: str = Field(
+        "gemini-2.5-flash", env="GENERATE_QNA_LLM_MODEL"
+    )
 
     class Config:
         env_file = ".env"
