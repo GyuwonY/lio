@@ -1,8 +1,7 @@
 from datetime import datetime
-from typing import Optional
-import enum
+from enum import Enum
 
-from sqlalchemy import Integer, DateTime, ForeignKey, Text, Enum
+from sqlalchemy import Integer, DateTime, ForeignKey, Text, Enum as SQLAlchemyEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from pgvector.sqlalchemy import Vector
@@ -12,7 +11,7 @@ from app.models.portfolio_item import PortfolioItem
 from app.models.user import User
 
 
-class QnAStatus(enum.Enum):
+class QnAStatus(Enum):
     PENDING = "PENDING"
     CONFIRMED = "CONFIRMED"
     DELETED = "DELETED"
@@ -30,7 +29,7 @@ class QnA(Base):
     embedding = mapped_column(Vector(768), nullable=True)
 
     status: Mapped[QnAStatus] = mapped_column(
-        Enum(QnAStatus), default=QnAStatus.PENDING, nullable=False
+        SQLAlchemyEnum(QnAStatus), default=QnAStatus.PENDING, nullable=False
     )
 
     user_id: Mapped[int] = mapped_column(

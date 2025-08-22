@@ -1,5 +1,5 @@
 from typing import List, Any
-from fastapi import APIRouter, Depends, Body, HTTPException, status, Response
+from fastapi import APIRouter, Depends, Body, HTTPException, status
 
 from app.schemas.portfolio_schema import (
     PortfolioRead,
@@ -130,7 +130,7 @@ async def delete_portfolio(
     return await service.delete_portfolio(portfolio_id=portfolio_id, current_user=current_user)
 
 
-@router.delete("/items/{portfolio_item_ids}")
+@router.delete("/items/")
 async def delete_portfolio_items(
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),

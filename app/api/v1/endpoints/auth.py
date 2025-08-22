@@ -10,7 +10,7 @@ router = APIRouter()
 async def login_with_google(
     auth_service: AuthService = Depends(),
     *,
-    id_token: str = Body(..., embed=True, alias="idToken"),
+    id_token: str = Body(..., embed=True),
 ):
     return await auth_service.login_or_register_google(id_token=id_token)
 

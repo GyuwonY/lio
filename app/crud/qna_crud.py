@@ -14,13 +14,14 @@ class QnACRUD:
         self.db = db
 
 
-    async def get_qnas_by_portfolio_id(self, *, portfolio_id: int) -> List[QnA]:
+    async def get_qnas_by_portfolio_id(self, *, portfolio_id: int, user_id: int) -> List[QnA]:
         stmt = (
             select(QnA)
             .join(PortfolioItem, QnA.portfolio_item_id == PortfolioItem.id)
             .where(
                 PortfolioItem.portfolio_id == portfolio_id,
                 QnA.status != QnAStatus.DELETED,
+                QnA.user_id == user_id
             )
         )
         result = await self.db.execute(stmt)
@@ -36,10 +37,10 @@ class QnACRUD:
         return db_qnas
 
 
-    async def get_qnas_by_ids(self, *, ids: List[int]) -> List[QnA]:
+    async def get_qnas_by_ids(self, *, ids: List[int], user_id: int) -> List[QnA]:
         result = await self.db.execute(
             select(QnA)
-            .where(QnA.id.in_(ids))
+            .where(QnA.id.in_(ids), QnA.user_id == user_id)
         )
         return list(result.scalars().all())
         

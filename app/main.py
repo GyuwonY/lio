@@ -1,3 +1,4 @@
+import logging
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
@@ -6,6 +7,11 @@ from app.core.config import settings
 from app.db.session import async_engine, Base
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
+
+# SQLAlchemy query logging
+logging.basicConfig()
+logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
+
 
 
 @asynccontextmanager

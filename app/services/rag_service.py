@@ -28,25 +28,24 @@ class RAGService:
         self.storage_service = storage_service
         self.embeddings_model = embeddings_model
 
+
     async def extract_text_from_gcs_pdf(self, gcs_url: str) -> str:
         file_bytes = await self.storage_service.download_as_bytes(gcs_url)
 
         tmp_path = ""
         try:
-            # Create a temporary file to store the PDF
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmpfile:
                 tmpfile.write(file_bytes)
                 tmp_path = tmpfile.name
 
-            # Load the PDF using UnstructuredPDFLoader's async method
             loader = PyPDFLoader(tmp_path)
             loop = asyncio.get_running_loop()
             documents = await loop.run_in_executor(None, loader.load)
             return " ".join([doc.page_content for doc in documents])
         finally:
-            # Clean up the temporary file
             if tmp_path and os.path.exists(tmp_path):
                 os.remove(tmp_path)
+
 
     async def embed_portfolio_items(
         self, items: List[PortfolioItem]
@@ -68,6 +67,7 @@ class RAGService:
             texts=texts_to_embed, output_dimensionality=768
         )
         
+        
     async def embed_qnas(
         self, qnas: List[QnA]
     ) -> List[List[float]]:
@@ -80,6 +80,7 @@ class RAGService:
         return await self.embeddings_model.aembed_documents(
             texts=texts_to_embed, output_dimensionality=768
         )
+
 
     async def similarity_search(
         self,
@@ -104,7 +105,6 @@ class RAGService:
             results.extend(portfolio_results.scalars().all())
 
         if search_type in ["qna", "all"]:
-            # QnA 검색은 기존 로직 유지
             qna_results = await self.db.execute(
                 select(QnA)
                 .filter(QnA.user_id == user_id)

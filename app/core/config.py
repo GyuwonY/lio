@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     GENERATE_QNA_LLM_MODEL: str = Field(
         "gemini-2.5-flash", env="GENERATE_QNA_LLM_MODEL"
     )
+    
+    LANGCHAIN_TRACING_V2: str = Field(...,env="LANGCHAIN_TRACING_V2")
+    LANGCHAIN_API_KEY: str = Field(...,env="LANGCHAIN_API_KEY")
+    LANGCHAIN_PROJECT: str = Field(...,env="LANGCHAIN_PROJECT")
 
     class Config:
         env_file = ".env"

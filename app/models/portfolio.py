@@ -46,5 +46,5 @@ class Portfolio(Base):
 
     user: Mapped["User"] = relationship(back_populates="portfolios")
     items: Mapped[List["PortfolioItem"]] = relationship(
-        back_populates="portfolio", cascade="all, delete-orphan"
+        back_populates="portfolio"
     )

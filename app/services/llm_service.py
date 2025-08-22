@@ -1,9 +1,15 @@
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import PydanticOutputParser, JsonOutputParser
+from langchain_core.output_parsers import PydanticOutputParser
+from langchain.output_parsers import OutputFixingParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.core.config import settings
-from app.core.prompts import GENERATE_QNA_PROMPT, STRUCTURE_PORTFOLIO_PROMPT
+from app.core.prompts import (
+    GENERATE_QNA_SYSTEM_PROMPT,
+    GENERATE_QNA_USER_PROMPT,
+    STRUCTURE_PORTFOLIO_SYSTEM_PROMPT,
+    STRUCTURE_PORTFOLIO_USER_PROMPT,
+)
 from app.models.portfolio_item import PortfolioItem
 from app.schemas.llm_schema import (
     LLMPortfolio,
@@ -17,48 +23,67 @@ class LLMService:
             model=settings.PDF_PARSING_LLM_MODEL,
             google_api_key=settings.GEMINI_API_KEY,
             temperature=0.1,
-            convert_system_message_to_human=True,
         )
         self.generate_qna_model = ChatGoogleGenerativeAI(
             model=settings.GENERATE_QNA_LLM_MODEL,
             google_api_key=settings.GEMINI_API_KEY,
             temperature=0.7,
-            convert_system_message_to_human=True,
         )
+
 
     async def structure_portfolio_from_text(
         self, *, text: str
-    ) -> str:
+    ) -> LLMPortfolio:
         portfolio_parser = PydanticOutputParser(pydantic_object=LLMPortfolio)
 
-        prompt = ChatPromptTemplate.from_template(
-            template=STRUCTURE_PORTFOLIO_PROMPT,
-            partial_variables={
-                "format_instructions": portfolio_parser.get_format_instructions()
-            },
+        fix_parser = OutputFixingParser.from_llm(
+            parser=portfolio_parser, llm=self.pdf_parsing_model
         )
 
-        chain = prompt | self.pdf_parsing_model | JsonOutputParser()
-        response_json_str = await chain.ainvoke({"text": text})
-        return response_json_str
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", STRUCTURE_PORTFOLIO_SYSTEM_PROMPT),
+                ("human", STRUCTURE_PORTFOLIO_USER_PROMPT),
+            ]
+        )
 
-    async def generate_qna_for_portfolio_item(self, *, item: PortfolioItem) -> str:
-        """LLM을 사용하여 단일 포트폴리오 항목에 대한 QnA 세트를 생성합니다."""
+        prompt = prompt.partial(
+            format_instructions=fix_parser.get_format_instructions()
+        )
 
+        chain = prompt | self.pdf_parsing_model | fix_parser
+
+        parsed_portfolio = await chain.ainvoke({"text": text})
+        return parsed_portfolio
+
+
+    async def generate_qna_for_portfolio_item(
+        self, *, item: PortfolioItem
+    ) -> LLMQnAOutput:
         qna_parser = PydanticOutputParser(pydantic_object=LLMQnAOutput)
-        prompt = ChatPromptTemplate.from_template(
-            template=GENERATE_QNA_PROMPT,
-            partial_variables={
-                "format_instructions": qna_parser.get_format_instructions()
-            },
+
+        fix_parser = OutputFixingParser.from_llm(
+            parser=qna_parser, llm=self.generate_qna_model
         )
 
-        chain = prompt | self.generate_qna_model | JsonOutputParser()
-        response_json_str = await chain.ainvoke(
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", GENERATE_QNA_SYSTEM_PROMPT),
+                ("human", GENERATE_QNA_USER_PROMPT),
+            ]
+        )
+
+        prompt = prompt.partial(
+            format_instructions=fix_parser.get_format_instructions()
+        )
+
+        chain = prompt | self.generate_qna_model | fix_parser
+
+        parsed_qna = await chain.ainvoke(
             {
                 "topic": item.topic,
                 "tech_stack": item.tech_stack,
                 "content": item.content,
             }
         )
-        return response_json_str
+        return parsed_qna

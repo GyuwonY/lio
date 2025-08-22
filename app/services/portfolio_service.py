@@ -3,7 +3,6 @@ from fastapi import Depends, HTTPException, status
 
 from app.crud.portfolio_crud import PortfolioCRUD
 from app.models.portfolio_item import PortfolioItem, PortfolioItemStatus
-from app.schemas.llm_schema import LLMPortfolio
 from app.schemas.portfolio_schema import (
     PortfolioCreateFromText,
     PortfolioCreateWithPdf,
@@ -26,6 +25,7 @@ class PortfolioService:
         self.crud = crud
         self.rag_service = rag_service
         self.llm_service = llm_service
+
 
     async def create_portfolio_from_text(
         self, *, portfolio_in: PortfolioCreateFromText, current_user: User
@@ -64,6 +64,7 @@ class PortfolioService:
 
         return created_portfolio
 
+
     async def create_portfolio_from_pdf(
         self, *, portfolio_in: PortfolioCreateWithPdf, current_user: User
     ) -> Portfolio:
@@ -77,10 +78,9 @@ class PortfolioService:
                     detail="PDF 파일에서 텍스트를 추출할 수 없습니다.",
                 )
 
-            llm_output_str = await self.llm_service.structure_portfolio_from_text(
+            structured_items = await self.llm_service.structure_portfolio_from_text(
                 text=text
             )
-            structured_items = LLMPortfolio.model_validate_json(llm_output_str)
             
             if not structured_items:
                 raise HTTPException(
@@ -121,6 +121,7 @@ class PortfolioService:
                 detail=f"PDF 처리 또는 LLM 응답 파싱 중 오류 발생: {e}",
             )
 
+
     async def confirm_portfolio(
         self, *, confirm_in: PortfolioConfirm, current_user: User
     ) -> Portfolio:
@@ -148,8 +149,10 @@ class PortfolioService:
 
         return portfolio
 
+
     async def get_user_portfolios(self, *, current_user: User) -> List[Portfolio]:
         return await self.crud.get_portfolios_by_user(user_id=current_user.id)
+
 
     async def update_portfolio_items(
         self, *, items_in: PortfolioItemsUpdate, current_user: User
@@ -196,16 +199,19 @@ class PortfolioService:
 
         return portfolio_items
 
+
     async def delete_portfolio(self, *, portfolio_id: int, current_user: User) -> None:
         deleted = await self.crud.delete_portfolio(
             portfolio_id=portfolio_id, user_id=current_user.id
         )
+        
         if not deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="삭제할 포트폴리오를 찾을 수 없거나 권한이 없습니다.",
             )
         return None
+
 
     async def delete_portfolio_items(
         self, *, portfolio_item_ids: List[int], current_user: User

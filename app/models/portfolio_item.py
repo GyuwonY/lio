@@ -15,9 +15,8 @@ from datetime import datetime, date
 from typing import TYPE_CHECKING, List, Optional
 from enum import Enum
 
-from app.models.qna import QnA
-
 if TYPE_CHECKING:
+    from app.models.qna import QnA
     from app.models.portfolio import Portfolio
 
 
