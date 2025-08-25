@@ -74,3 +74,7 @@ class PortfolioConfirm(BaseModel):
 class UploadURLResponse(BaseModel):
     upload_url: str
     file_path: str
+
+
+class PortfolioDelete(BaseModel):
+    portfolio_item_ids: List[int]

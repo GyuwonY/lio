@@ -26,3 +26,9 @@ class QnACreate(QnABase):
 
 class QnAsUpdate(BaseModel):
     qnas: List[QnAUpdate]
+
+class QnAsDelete(BaseModel):
+    qna_ids: List[int]
+
+class QnAsConfirm(BaseModel):
+    qna_ids: List[int]

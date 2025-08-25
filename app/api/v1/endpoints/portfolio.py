@@ -2,6 +2,7 @@ from typing import List, Any
 from fastapi import APIRouter, Depends, Body, HTTPException, status
 
 from app.schemas.portfolio_schema import (
+    PortfolioDelete,
     PortfolioRead,
     UploadURLResponse,
     PortfolioItemsUpdate,
@@ -130,16 +131,16 @@ async def delete_portfolio(
     return await service.delete_portfolio(portfolio_id=portfolio_id, current_user=current_user)
 
 
-@router.delete("/items/")
+@router.delete("/items")
 async def delete_portfolio_items(
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
     *,
-    portfolio_item_ids: List[int],
+    portfolio_delete: PortfolioDelete,
 ):
     """
     ID로 특정 포트폴리오 item 삭제합니다.
     """
     return await service.delete_portfolio_items(
-        portfolio_item_ids=portfolio_item_ids, current_user=current_user
+        portfolio_item_ids=portfolio_delete.portfolio_item_ids, current_user=current_user
     )

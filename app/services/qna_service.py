@@ -1,10 +1,9 @@
 import asyncio
 from typing import List
-from fastapi import Depends, BackgroundTasks, HTTPException, status
+from fastapi import Depends, HTTPException, status
 
 from app.crud.qna_crud import QnACRUD
 from app.crud.portfolio_crud import PortfolioCRUD
-from app.models.portfolio import PortfolioStatus
 from app.models.qna import QnA, QnAStatus
 from app.schemas.qna_schema import (
     QnARead,
@@ -12,7 +11,7 @@ from app.schemas.qna_schema import (
     QnAsUpdate,
 )
 from app.models.user import User
-from app.models.portfolio_item import PortfolioItem
+from app.models.portfolio_item import PortfolioItem, PortfolioItemType
 from app.services.llm_service import LLMService
 from app.services.rag_service import RAGService
 
@@ -31,19 +30,15 @@ class QnAService:
         self.rag_service = rag_service
 
 
-    async def _generate_and_save_qna_for_item(
-        self, *, item: PortfolioItem, user_id: int
-    ):
+    async def _generate_qna_for_item(
+        self, *, item: PortfolioItem
+    ) -> List[QnACreate]:
         try:
             parsed_output = await self.llm_service.generate_qna_for_portfolio_item(
                 item=item
             )
 
-            if not parsed_output.qnas:
-                print(f"No QnA generated for portfolio_item_id: {item.id}")
-                return
-
-            qnas_to_create = [
+            return [
                 QnACreate(
                     question=qna_set.question,
                     answer=qna_set.answer,
@@ -51,52 +46,46 @@ class QnAService:
                 )
                 for qna_set in parsed_output.qnas
             ]
-
-            await self.qna_crud.bulk_create_qnas(
-                qna_list=qnas_to_create, user_id=user_id
-            )
-
         except Exception as e:
             print(f"Error generating QnA for portfolio_item_id {item.id}: {e}")
+            return []
 
-
-    async def generate_qna_for_all_portfolios_background(self, *, current_user: User, portfolio_id: int):
-        user_portfolio = await self.portfolio_crud.get_portfolio_by_id(
-            user_id=current_user.id, portfolio_id=portfolio_id
+    async def generate_qna_for_all_portfolios_background(self, *, current_user: User, portfolio_id: int, portfolio_item_type: PortfolioItemType) -> List[QnA]:
+        portfolio_items = await self.portfolio_crud.get_confirmed_portfolio_items_by_portfolio_id(
+            portfolio_id=portfolio_id, portfolio_item_type=portfolio_item_type
         )
         
-        if not user_portfolio:
+        if not portfolio_items:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="존재하지 않는 포트폴리오",
+                detail="존재하지 않는 항목 타입",
             )
-        
-        if user_portfolio.status != PortfolioStatus.CONFIRMED:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="확정되지 않은 포트폴리오",
-            )
-
-        all_items = [item for item in user_portfolio.items]
-
-        if not all_items:
-            print(f"No portfolio items found for user_id: {current_user.id}")
-            return
 
         tasks = [
-            self._generate_and_save_qna_for_item(item=item, user_id=current_user.id)
-            for item in all_items
+            self._generate_qna_for_item(item=item)
+            for item in portfolio_items
         ]
-        await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks)
+        
+        qnas_to_create = []
+        for result in results:
+            qnas_to_create.extend(result)
+        
+        if qnas_to_create:
+            return await self.qna_crud.bulk_create_qnas(
+                qna_list=qnas_to_create, user_id=current_user.id
+            )
+            
+        return []
 
 
-    async def add_qna_generation_task(
-        self, *, background_tasks: BackgroundTasks, current_user: User, portfolio_id: int
-    ) -> dict:
-        background_tasks.add_task(
-            self.generate_qna_for_all_portfolios_background, current_user=current_user, portfolio_id=portfolio_id
-        )
-        return {"message": "Q&A generation has been started in the background."}
+    # async def add_qna_generation_task(
+    #     self, *, background_tasks: BackgroundTasks, current_user: User, portfolio_id: int, portfolio_item_type: PortfolioItemType
+    # ) -> dict:
+    #     background_tasks.add_task(
+    #         self.generate_qna_for_all_portfolios_background, current_user=current_user, portfolio_id=portfolio_id, portfolio_item_type=portfolio_item_type
+    #     )
+    #     return {"message": "Q&A generation has been started in the background."}
 
 
     async def get_qnas_by_portfolio(
@@ -148,12 +137,6 @@ class QnAService:
 
             qna.question = qna_update.question
             qna.answer = qna_update.answer
-        
-        
-        for qna in qnas:
-            update_qna = update_qna_dict[qna.id]
-            qna.question = update_qna.question
-            qna.answer = update_qna.answer
         
         return [QnARead(
                 id=qna.id,

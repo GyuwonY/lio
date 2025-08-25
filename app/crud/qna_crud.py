@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy import insert
 from typing import List
 from fastapi import Depends
 
@@ -31,10 +32,22 @@ class QnACRUD:
     async def bulk_create_qnas(
         self, *, qna_list: List[QnACreate], user_id: int
     ) -> List[QnA]:
-        db_qnas = [QnA(**qna.model_dump(), user_id=user_id) for qna in qna_list]
-        self.db.add_all(db_qnas)
-        await self.db.flush()
-        return db_qnas
+        if not qna_list:
+            return []
+            
+        qnas_data = [
+            {
+                "question": qna.question,
+                "answer": qna.answer,
+                "portfolio_item_id": qna.portfolio_item_id,
+                "user_id": user_id,
+                "status": QnAStatus.PENDING,
+            }
+            for qna in qna_list
+        ]
+        
+        result = await self.db.execute(insert(QnA).values(qnas_data).returning(QnA))
+        return list(result.scalars().all())
 
 
     async def get_qnas_by_ids(self, *, ids: List[int], user_id: int) -> List[QnA]:

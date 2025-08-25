@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from app.db.session import get_db
 from app.models.portfolio import Portfolio, PortfolioSourceType, PortfolioStatus
-from app.models.portfolio_item import PortfolioItem, PortfolioItemStatus
+from app.models.portfolio_item import PortfolioItem, PortfolioItemStatus, PortfolioItemType
 
 
 class PortfolioCRUD:
@@ -54,6 +54,18 @@ class PortfolioCRUD:
             select(PortfolioItem).where(
                 PortfolioItem.id.in_(portfolio_item_ids), 
                 PortfolioItem.status != PortfolioItemStatus.DELETED
+            )
+        )
+        return list(result.scalars().all())
+    
+    async def get_confirmed_portfolio_items_by_portfolio_id(
+        self, *, portfolio_id: int, portfolio_item_type: PortfolioItemType
+    ) -> List[PortfolioItem]:
+        result = await self.db.execute(
+            select(PortfolioItem).where(
+                PortfolioItem.portfolio_id == portfolio_id, 
+                PortfolioItem.status == PortfolioItemStatus.CONFIRMED,
+                PortfolioItem.type == portfolio_item_type
             )
         )
         return list(result.scalars().all())
