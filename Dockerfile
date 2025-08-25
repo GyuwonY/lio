@@ -1,4 +1,4 @@
-FROM python:3.13-slim-bookworm as builder
+FROM python:3.13-slim-bookworm AS builder
 
 WORKDIR /app
 
@@ -7,9 +7,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip pip-tools
+
+COPY ./requirements.in /app/requirements.in
+
+RUN pip-compile -o requirements.txt requirements.in && \
+    pip install --no-cache-dir --upgrade -r /app/requirements.txt
+
+COPY . /app
+
 
 
 FROM python:3.13-slim-bookworm
