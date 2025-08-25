@@ -24,8 +24,6 @@ class PortfolioSourceType(Enum):
 
 
 class Portfolio(Base):
-    """포트폴리오 제출 세션 또는 원본 문서를 나타내는 모델"""
-
     __tablename__ = "portfolios"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
