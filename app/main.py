@@ -8,9 +8,9 @@ from app.db.session import async_engine, Base
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
-# SQLAlchemy query logging
-logging.basicConfig()
-logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
+# # SQLAlchemy query logging
+# logging.basicConfig()
+# logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
 
 
