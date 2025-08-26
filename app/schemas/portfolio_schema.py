@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel
 from datetime import datetime
 from typing import List, Optional
@@ -20,13 +21,13 @@ class PortfolioItemCreate(PortfolioItemBase):
 
 
 class PortfolioItemRead(PortfolioItemBase):
-    id: int
-    portfolio_id: int
+    id: uuid.UUID
+    portfolio_id: uuid.UUID
     created_at: datetime
 
 
 class PortfolioItemUpdate(BaseModel):
-    id: int
+    id: uuid.UUID
     type: PortfolioItemType
     topic: str
     start_date: Optional[datetime] = None
@@ -58,8 +59,8 @@ class PortfolioCreateWithPdf(PortfolioBase):
 class PortfolioRead(PortfolioBase):
     """포트폴리오 조회를 위한 스키마 (API 응답용)"""
 
-    id: int
-    user_id: int
+    id: uuid.UUID
+    user_id: uuid.UUID
     status: PortfolioStatus
     source_type: str
     source_url: Optional[str] = None
@@ -68,7 +69,7 @@ class PortfolioRead(PortfolioBase):
 
 
 class PortfolioConfirm(BaseModel):
-    portfolio_id: int
+    portfolio_id: uuid.UUID
 
 
 class UploadURLResponse(BaseModel):
@@ -77,4 +78,4 @@ class UploadURLResponse(BaseModel):
 
 
 class PortfolioDelete(BaseModel):
-    portfolio_item_ids: List[int]
+    portfolio_item_ids: List[uuid.UUID]

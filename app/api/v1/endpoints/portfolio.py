@@ -1,3 +1,4 @@
+import uuid
 from typing import List, Any
 from fastapi import APIRouter, Depends, Body, HTTPException, status
 
@@ -79,7 +80,7 @@ async def confirm_portfolio(
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
     *,
-    portfolio_id: int,
+    portfolio_id: uuid.UUID,
 ) -> Any:
     """
     PENDING 상태의 포트폴리오를 CONFIRMED 상태로 확정합니다.
@@ -123,7 +124,7 @@ async def delete_portfolio(
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
     *,
-    portfolio_id: int,
+    portfolio_id: uuid.UUID,
 ):
     """
     ID로 특정 포트폴리오를 삭제합니다.

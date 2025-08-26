@@ -1,3 +1,4 @@
+import uuid
 from typing import List
 from fastapi import Depends, HTTPException, status
 
@@ -200,7 +201,7 @@ class PortfolioService:
         return portfolio_items
 
 
-    async def delete_portfolio(self, *, portfolio_id: int, current_user: User) -> None:
+    async def delete_portfolio(self, *, portfolio_id: uuid.UUID, current_user: User) -> None:
         deleted = await self.crud.delete_portfolio(
             portfolio_id=portfolio_id, user_id=current_user.id
         )
@@ -214,7 +215,7 @@ class PortfolioService:
 
 
     async def delete_portfolio_items(
-        self, *, portfolio_item_ids: List[int], current_user: User
+        self, *, portfolio_item_ids: List[uuid.UUID], current_user: User
     ) -> None:
         deleted = await self.crud.delete_portfolio_items(
             portfolio_item_ids=portfolio_item_ids

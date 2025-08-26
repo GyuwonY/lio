@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 
@@ -11,7 +12,7 @@ class ChatbotSettingUpdate(ChatbotSettingBase):
 
 
 class ChatbotSettingRead(ChatbotSettingBase):
-    id: int
-    user_id: int
+    id: uuid.UUID
+    user_id: uuid.UUID
 
     model_config = ConfigDict(from_attributes=True)

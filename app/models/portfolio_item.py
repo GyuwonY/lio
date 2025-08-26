@@ -1,3 +1,4 @@
+import uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from pgvector.sqlalchemy import Vector
@@ -10,6 +11,7 @@ from sqlalchemy import (
     Date,
     ARRAY,
 )
+from sqlalchemy.dialects.postgresql import UUID
 from app.db.session import Base
 from datetime import datetime, date
 from typing import TYPE_CHECKING, List, Optional
@@ -40,8 +42,10 @@ class PortfolioItem(Base):
 
     __tablename__ = "portfolio_items"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    portfolio_id: Mapped[int] = mapped_column(
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    portfolio_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("portfolios.id"), nullable=False
     )
 

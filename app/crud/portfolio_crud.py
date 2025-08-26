@@ -1,3 +1,4 @@
+import uuid
 from typing import List
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,8 +15,7 @@ class PortfolioCRUD:
         self.db = db
 
 
-    async def get_portfolios_by_user(self, *, user_id: int) -> List[Portfolio]:
-        """사용자의 모든 포트폴리오 목록을 조회합니다 (items 포함)."""
+    async def get_portfolios_by_user(self, *, user_id: uuid.UUID) -> List[Portfolio]:
         result = await self.db.execute(
             select(Portfolio)
             .options(
@@ -30,9 +30,8 @@ class PortfolioCRUD:
 
 
     async def get_portfolio_by_id(
-        self, *, portfolio_id: int, user_id: int
+        self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
     ) -> Portfolio | None:
-        """ID와 사용자 ID로 특정 포트폴리오를 조회합니다 (items 포함)."""
         result = await self.db.execute(
             select(Portfolio)
             .options(
@@ -48,7 +47,7 @@ class PortfolioCRUD:
 
 
     async def get_portfolio_item_by_ids(
-        self, *, portfolio_item_ids: List[int]
+        self, *, portfolio_item_ids: List[uuid.UUID]
     ) -> List[PortfolioItem]:
         result = await self.db.execute(
             select(PortfolioItem).where(
@@ -59,7 +58,7 @@ class PortfolioCRUD:
         return list(result.scalars().all())
     
     async def get_confirmed_portfolio_items_by_portfolio_id(
-        self, *, portfolio_id: int, portfolio_item_type: PortfolioItemType
+        self, *, portfolio_id: uuid.UUID, portfolio_item_type: PortfolioItemType
     ) -> List[PortfolioItem]:
         result = await self.db.execute(
             select(PortfolioItem).where(
@@ -74,15 +73,12 @@ class PortfolioCRUD:
     async def create_portfolio(
         self,
         *,
-        user_id: int,
+        user_id: uuid.UUID,
         source_type: PortfolioSourceType,
         source_url: str | None,
         status: PortfolioStatus,
         items: List[PortfolioItem],
     ) -> Portfolio:
-        """
-        Portfolio와 그에 속한 Item들을 생성합니다.
-        """
         db_portfolio = Portfolio(
             user_id=user_id,
             source_type=source_type,
@@ -101,7 +97,7 @@ class PortfolioCRUD:
         return refreshed_portfolio
 
 
-    async def delete_portfolio(self, *, portfolio_id: int, user_id: int) -> bool:
+    async def delete_portfolio(self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID) -> bool:
         db_portfolio = await self.get_portfolio_by_id(
             portfolio_id=portfolio_id, user_id=user_id
         )
@@ -117,7 +113,7 @@ class PortfolioCRUD:
         return True
 
 
-    async def delete_portfolio_items(self, *, portfolio_item_ids: List[int]) -> bool:
+    async def delete_portfolio_items(self, *, portfolio_item_ids: List[uuid.UUID]) -> bool:
         db_portfolio_items = await self.get_portfolio_item_by_ids(
             portfolio_item_ids=portfolio_item_ids
         )
@@ -129,3 +125,16 @@ class PortfolioCRUD:
 
         await self.db.flush()
         return True
+
+
+    async def search_portfolios_by_embedding(self, *, embedding: List[float], user_id: uuid.UUID) -> List[Portfolio]:
+        result = await self.db.execute(
+            select(Portfolio)
+            .where(
+                Portfolio.user_id == user_id,
+                Portfolio.status == PortfolioStatus.CONFIRMED,
+            )
+            .order_by(Portfolio.embedding.cosine_distance(embedding))
+            .limit(3)
+        )
+        return list(result.scalars().all())

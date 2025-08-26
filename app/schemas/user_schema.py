@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional
@@ -13,7 +14,7 @@ class UserCreate(UserBase):
 
 
 class UserRead(UserBase):
-    id: int
+    id: uuid.UUID
     created_at: datetime
 
 

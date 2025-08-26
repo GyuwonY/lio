@@ -1,7 +1,9 @@
+import uuid
 from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import Integer, DateTime, ForeignKey, Text, Enum as SQLAlchemyEnum
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from pgvector.sqlalchemy import Vector
@@ -20,7 +22,9 @@ class QnAStatus(Enum):
 class QnA(Base):
     __tablename__ = "qnas"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
 
     question: Mapped[str] = mapped_column(Text, nullable=False)
 
@@ -32,12 +36,12 @@ class QnA(Base):
         SQLAlchemyEnum(QnAStatus), default=QnAStatus.PENDING, nullable=False
     )
 
-    user_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("users.id"), nullable=False
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
 
-    portfolio_item_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("portfolio_items.id"), nullable=False
+    portfolio_item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("portfolio_items.id"), nullable=False
     )
 
     created_at: Mapped[datetime] = mapped_column(

@@ -81,36 +81,8 @@ class RAGService:
             texts=texts_to_embed, output_dimensionality=768
         )
 
-
-    async def similarity_search(
-        self,
-        user_id: int,
-        query_text: str,
-        top_k: int = 5,
-        search_type: str = "all",
-    ) -> List[Any]:
-        query_embedding = await self.embeddings_model.aembed_query(
-            text=query_text, output_dimensionality=768
-        )
-
-        results = []
-        if search_type in ["portfolio", "all"]:
-            portfolio_results = await self.db.execute(
-                select(PortfolioItem)
-                .join(Portfolio)
-                .filter(Portfolio.user_id == user_id)
-                .order_by(PortfolioItem.embedding.l2_distance(query_embedding))
-                .limit(top_k)
-            )
-            results.extend(portfolio_results.scalars().all())
-
-        if search_type in ["qna", "all"]:
-            qna_results = await self.db.execute(
-                select(QnA)
-                .filter(QnA.user_id == user_id)
-                .order_by(QnA.embedding.l2_distance(query_embedding))
-                .limit(top_k)
-            )
-            results.extend(qna_results.scalars().all())
-
-        return results[:top_k]
+    
+    async def embed_query(
+        self, *, query: str
+    ) -> List[float]:
+        return await self.embeddings_model.aembed_query(query)

@@ -17,7 +17,9 @@ anyio==4.10.0
     #   httpx
     #   starlette
 asyncpg==0.30.0
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   langchain-postgres
 attrs==25.3.0
     # via aiohttp
 cachetools==5.5.2
@@ -123,11 +125,14 @@ langchain-core==0.3.74
     #   langchain
     #   langchain-community
     #   langchain-google-genai
+    #   langchain-postgres
     #   langchain-text-splitters
     #   langgraph
     #   langgraph-checkpoint
     #   langgraph-prebuilt
 langchain-google-genai==2.1.9
+    # via -r requirements.in
+langchain-postgres==0.0.15
     # via -r requirements.in
 langchain-text-splitters==0.3.9
     # via langchain
@@ -154,9 +159,10 @@ multidict==6.6.3
     #   yarl
 mypy-extensions==1.1.0
     # via typing-inspect
-numpy==2.2.6
+numpy==2.3.2
     # via
     #   langchain-community
+    #   langchain-postgres
     #   pgvector
 orjson==3.11.1
     # via
@@ -169,8 +175,10 @@ packaging==25.0
     #   langchain-core
     #   langsmith
     #   marshmallow
-pgvector==0.4.1
-    # via -r requirements.in
+pgvector==0.3.6
+    # via
+    #   -r requirements.in
+    #   langchain-postgres
 propcache==0.3.2
     # via
     #   aiohttp
@@ -186,6 +194,10 @@ protobuf==6.31.1
     #   googleapis-common-protos
     #   grpcio-status
     #   proto-plus
+psycopg==3.2.9
+    # via langchain-postgres
+psycopg-pool==3.2.6
+    # via langchain-postgres
 pyasn1==0.6.1
     # via
     #   pyasn1-modules
@@ -249,6 +261,7 @@ sqlalchemy==2.0.42
     #   -r requirements.in
     #   langchain
     #   langchain-community
+    #   langchain-postgres
 starlette==0.47.2
     # via fastapi
 tenacity==9.1.2
@@ -259,6 +272,7 @@ typing-extensions==4.14.1
     # via
     #   fastapi
     #   langchain-core
+    #   psycopg-pool
     #   pydantic
     #   pydantic-core
     #   sqlalchemy
@@ -270,6 +284,8 @@ typing-inspection==0.4.1
     # via
     #   pydantic
     #   pydantic-settings
+tzdata==2025.2
+    # via psycopg
 urllib3==2.5.0
     # via requests
 uvicorn==0.35.0

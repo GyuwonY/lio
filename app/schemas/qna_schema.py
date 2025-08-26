@@ -1,3 +1,4 @@
+import uuid
 from pydantic import BaseModel
 from typing import List
 
@@ -10,25 +11,25 @@ class QnABase(BaseModel):
 
 
 class QnAUpdate(BaseModel):
-    id: int
+    id: uuid.UUID
     question: str
     answer: str
 
 
 class QnARead(QnABase):
-    id: int
+    id: uuid.UUID
     status: QnAStatus
-    portfolio_item_id: int
+    portfolio_item_id: uuid.UUID
 
 
 class QnACreate(QnABase):
-    portfolio_item_id: int
+    portfolio_item_id: uuid.UUID
 
 class QnAsUpdate(BaseModel):
     qnas: List[QnAUpdate]
 
 class QnAsDelete(BaseModel):
-    qna_ids: List[int]
+    qna_ids: List[uuid.UUID]
 
 class QnAsConfirm(BaseModel):
-    qna_ids: List[int]
+    qna_ids: List[uuid.UUID]

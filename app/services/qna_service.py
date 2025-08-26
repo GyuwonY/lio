@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from typing import List
 from fastapi import Depends, HTTPException, status
 
@@ -50,7 +51,7 @@ class QnAService:
             print(f"Error generating QnA for portfolio_item_id {item.id}: {e}")
             return []
 
-    async def generate_qna_for_all_portfolios_background(self, *, current_user: User, portfolio_id: int, portfolio_item_type: PortfolioItemType) -> List[QnA]:
+    async def generate_qna_for_all_portfolios_background(self, *, current_user: User, portfolio_id: uuid.UUID, portfolio_item_type: PortfolioItemType) -> List[QnA]:
         portfolio_items = await self.portfolio_crud.get_confirmed_portfolio_items_by_portfolio_id(
             portfolio_id=portfolio_id, portfolio_item_type=portfolio_item_type
         )
@@ -80,7 +81,7 @@ class QnAService:
 
 
     # async def add_qna_generation_task(
-    #     self, *, background_tasks: BackgroundTasks, current_user: User, portfolio_id: int, portfolio_item_type: PortfolioItemType
+    #     self, *, background_tasks: BackgroundTasks, current_user: User, portfolio_id: uuid.UUID, portfolio_item_type: PortfolioItemType
     # ) -> dict:
     #     background_tasks.add_task(
     #         self.generate_qna_for_all_portfolios_background, current_user=current_user, portfolio_id=portfolio_id, portfolio_item_type=portfolio_item_type
@@ -89,7 +90,7 @@ class QnAService:
 
 
     async def get_qnas_by_portfolio(
-        self, *, portfolio_id: int, current_user: User
+        self, *, portfolio_id: uuid.UUID, current_user: User
     ) -> List[QnARead]:
         qnas = await self.qna_crud.get_qnas_by_portfolio_id(portfolio_id=portfolio_id, user_id=current_user.id)
 
@@ -147,13 +148,13 @@ class QnAService:
             ) for qna in qnas]
 
     
-    async def delete_qnas(self, *, qna_ids: List[int], current_user: User):
+    async def delete_qnas(self, *, qna_ids: List[uuid.UUID], current_user: User):
         qnas = await self.qna_crud.get_qnas_by_ids(ids=qna_ids, user_id=current_user.id)
         for qna in qnas:
             qna.status = QnAStatus.DELETED
             
     
-    async def confirm_qnas(self, *, qna_ids: List[int], current_user: User) -> List[QnA]:
+    async def confirm_qnas(self, *, qna_ids: List[uuid.UUID], current_user: User) -> List[QnA]:
         qnas = await self.qna_crud.get_qnas_by_ids(ids=qna_ids, user_id=current_user.id)
         embeddings = await self.rag_service.embed_qnas(qnas)
         

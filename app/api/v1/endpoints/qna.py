@@ -1,3 +1,4 @@
+import uuid
 from fastapi import APIRouter, Depends
 from typing import List
 
@@ -19,7 +20,7 @@ router = APIRouter()
 #     current_user: User = Depends(get_current_user),
 #     service: QnAService = Depends(),
 #     *,
-#     portfolio_id: int,
+#     portfolio_id: uuid.UUID,
 #     portfolio_item_type: PortfolioItemType
 # ):
 #     """
@@ -40,7 +41,7 @@ async def generate_qna_sync(
     current_user: User = Depends(get_current_user),
     service: QnAService = Depends(),
     *,
-    portfolio_id: int,
+    portfolio_id: uuid.UUID,
     portfolio_item_type: PortfolioItemType
 ):
     """
@@ -55,7 +56,7 @@ async def get_qnas_by_portfolio(
     current_user: User = Depends(get_current_user),
     service: QnAService = Depends(),
     *,
-    portfolio_id: int,
+    portfolio_id: uuid.UUID,
 ):
     return await service.get_qnas_by_portfolio(
         current_user=current_user, portfolio_id=portfolio_id

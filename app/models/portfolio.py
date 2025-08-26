@@ -1,8 +1,10 @@
+import uuid
 from enum import Enum
 from datetime import datetime
 from typing import TYPE_CHECKING, List
 
 from sqlalchemy import String, DateTime, ForeignKey, Enum as SQLAlchemyEnum
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from app.db.session import Base
@@ -26,8 +28,10 @@ class PortfolioSourceType(Enum):
 class Portfolio(Base):
     __tablename__ = "portfolios"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
 
     status: Mapped[PortfolioStatus] = mapped_column(
         SQLAlchemyEnum(PortfolioStatus), nullable=False, default=PortfolioStatus.PENDING
@@ -46,3 +50,4 @@ class Portfolio(Base):
     items: Mapped[List["PortfolioItem"]] = relationship(
         back_populates="portfolio"
     )
+    chats: Mapped[List["Chat"]] = relationship(back_populates="portfolio")

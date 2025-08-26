@@ -24,7 +24,7 @@ class StorageService:
         self.bucket = self.storage_client.bucket(self.bucket_name)
 
     async def generate_upload_url(
-        self, user_id: int, file_name: str
+        self, user_id: uuid.UUID, file_name: str
     ) -> tuple[str, str]:
         """
         Generates a presigned URL for uploading a file to GCS.
