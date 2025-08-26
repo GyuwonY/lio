@@ -37,6 +37,8 @@ jobs:
           env_vars: |
             GCP_PROJECT_ID=${{ env.PROJECT_ID }}
             APP_ENV=dev
+            LANGCHAIN_TRACING_V2=true
+            LANGCHAIN_PROJECT=lio-dev
           secrets: |
             DATABASE_URL=DATABASE_URL_TEST:latest
             GEMINI_API_KEY=GEMINI_API_KEY_TEST:latest
@@ -45,3 +47,4 @@ jobs:
             GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest
             GCS_BUCKET_NAME=GCS_BUCKET_NAME:latest
             GOOGLE_BUCKET_CREDENTIALS=GOOGLE_BUCKET_CREDENTIALS:latest
+            LANGCHAIN_API_KEY=LANGCHAIN_API_KEY:latest
