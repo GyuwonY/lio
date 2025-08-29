@@ -39,3 +39,7 @@ class LLMPortfolioItem(BaseModel):
 
 class LLMPortfolio(BaseModel):
     items: List[LLMPortfolioItem]
+
+
+class LLMSplitQueries(BaseModel):
+    queries: List[str]

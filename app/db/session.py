@@ -1,7 +1,7 @@
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import declarative_base
-
+import redis.asyncio as redis
 from app.core.config import settings
 
 async_engine = create_async_engine(
@@ -16,6 +16,8 @@ AsyncSessionLocal = async_sessionmaker(
 )
 Base = declarative_base()
 
+redis_client = redis.from_url(settings.REDIS_URL, encoding="utf-8", decode_responses=True)
+
 
 async def get_db():
     async with AsyncSessionLocal() as session:
@@ -26,6 +28,8 @@ async def get_db():
             await session.rollback()
             raise e
 
+async def get_redis_client():
+    return redis_client
 
 async def get_embeddings_model() -> GoogleGenerativeAIEmbeddings:
     return GoogleGenerativeAIEmbeddings(

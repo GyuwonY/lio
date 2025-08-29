@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from app.api.v1.api import api_router
 from app.core.config import settings
-from app.db.session import async_engine, Base
+from app.db.session import async_engine, Base, redis_client
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -20,7 +20,10 @@ async def lifespan(app: FastAPI):
     # Create DB tables
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    
     yield
+    
+    await redis_client.close()
 
 
 app = FastAPI(

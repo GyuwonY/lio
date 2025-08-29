@@ -1,18 +1,16 @@
 import asyncio
 import os
 import tempfile
-from typing import Any, List
+from typing import List
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 from app.services.storage_service import StorageService
 from app.db.session import get_db, get_embeddings_model
-from app.models.portfolio import Portfolio
 from app.models.portfolio_item import PortfolioItem
 from app.models.qna import QnA
 
@@ -82,7 +80,7 @@ class RAGService:
         )
 
     
-    async def embed_query(
-        self, *, query: str
-    ) -> List[float]:
-        return await self.embeddings_model.aembed_query(query)
+    async def embed_queries(
+        self, *, queries: List[str]
+    ) -> List[List[float]]:
+        return await self.embeddings_model.aembed_documents(texts=queries, output_dimensionality=768)

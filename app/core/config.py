@@ -6,10 +6,11 @@ class Settings(BaseSettings):
     # Environment settings
     APP_ENV: str = Field("local", env="APP_ENV")  # local or production
     GCP_PROJECT_ID: str = Field(..., env="GCP_PROJECT_ID")
+    GEMINI_API_KEY: str = Field(..., env="GEMINI_API_KEY")
 
     # Database and Services
     DATABASE_URL: str = Field(..., env="DATABASE_URL")
-    GEMINI_API_KEY: str = Field(..., env="GEMINI_API_KEY")
+    REDIS_URL: str = Field(..., env="REDIS_URL")
 
     # JWT Settings
     ACCESS_TOKEN_SECRET_KEY: str = Field(..., env="ACCESS_TOKEN_SECRET_KEY")
@@ -34,12 +35,10 @@ class Settings(BaseSettings):
 
     # Model
     EMBEDDING_MODEL: str = Field("gemini-embedding-001", env="EMBEDDING_MODEL")
-    PDF_PARSING_LLM_MODEL: str = Field(
-        "gemini-2.5-flash-lite", env="PDF_PARSING_LLM_MODEL"
-    )
-    GENERATE_QNA_LLM_MODEL: str = Field(
-        "gemini-2.5-flash", env="GENERATE_QNA_LLM_MODEL"
-    )
+    PDF_PARSING_LLM_MODEL: str = Field("gemini-2.5-flash-lite", env="PDF_PARSING_LLM_MODEL")
+    GENERATE_QNA_LLM_MODEL: str = Field("gemini-2.5-flash", env="GENERATE_QNA_LLM_MODEL")
+    QUERY_GENERATION_LLM_MODEL: str = Field("gemini-2.5-flash-lite", env="GENERATE_QNA_LLM_MODEL")
+    CHAT_LLM_MODEL: str = Field("gemini-2.5-flash-lite", env="CHAT_LLM_MODEL")
     
     LANGCHAIN_TRACING_V2: str = Field(...,env="LANGCHAIN_TRACING_V2")
     LANGCHAIN_API_KEY: str = Field(...,env="LANGCHAIN_API_KEY")

@@ -6,6 +6,7 @@ uvicorn
 sqlalchemy
 asyncpg
 pgvector
+redis[hiredis]
 
 # Data Validation & Settings
 pydantic

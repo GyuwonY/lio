@@ -1,5 +1,6 @@
+from typing import List
 import uuid
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
 from app.models.chat import ChatType
 
@@ -21,3 +22,8 @@ class Chat(ChatBase):
 
 class ChatResponse(BaseModel):
     answer: str
+    
+    
+class GraphStateQuery(BaseModel):
+    query: str
+    embedding: List[float]  = Field(default_factory=list)
