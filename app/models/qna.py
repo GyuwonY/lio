@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import Integer, DateTime, ForeignKey, Text, Enum as SQLAlchemyEnum
+from sqlalchemy import DateTime, ForeignKey, Text, Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -52,5 +52,5 @@ class QnA(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    user: Mapped[User] = relationship()
+    user: Mapped[User] = relationship(back_populates="user")
     portfolio_item: Mapped[PortfolioItem] = relationship(back_populates="qnas")

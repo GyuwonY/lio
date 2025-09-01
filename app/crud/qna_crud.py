@@ -59,16 +59,14 @@ class QnACRUD:
         return list(result.scalars().all())
         
 
-    async def search_qnas_by_portfolio_ids_and_embedding(
-        self, *, portfolio_ids: List[uuid.UUID], embedding: List[float], user_id: uuid.UUID
+    async def search_qnas_embedding(
+        self, *, portfolio_item_ids: List[uuid.UUID], embedding: List[float],
     ) -> List[QnA]:
-        """포트폴리오 ID 목록과 임베딩을 사용하여 유사한 QnA를 검색합니다."""
         result = await self.db.execute(
             select(QnA)
             .join(PortfolioItem, QnA.portfolio_item_id == PortfolioItem.id)
             .where(
-                PortfolioItem.portfolio_id.in_(portfolio_ids),
-                QnA.user_id == user_id,
+                PortfolioItem.portfolio_id.in_(portfolio_item_ids),
                 QnA.status == QnAStatus.CONFIRMED,
             )
             .order_by(QnA.question_embedding.cosine_distance(embedding))

@@ -1,9 +1,11 @@
 import uuid
 from typing import List
 from fastapi import Depends
+from sqlalchemy import literal_column, values
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, aliased
+from pgvector.sqlalchemy import Vector
 
 from app.db.session import get_db
 from app.models.portfolio import Portfolio, PortfolioSourceType, PortfolioStatus
@@ -127,14 +129,21 @@ class PortfolioCRUD:
         return True
 
 
-    async def search_portfolios_by_embedding(self, *, embedding: List[float], user_id: uuid.UUID) -> List[Portfolio]:
-        result = await self.db.execute(
-            select(Portfolio)
-            .where(
-                Portfolio.user_id == user_id,
-                Portfolio.status == PortfolioStatus.CONFIRMED,
-            )
-            .order_by(Portfolio.embedding.cosine_distance(embedding))
+    async def search_portfolio_items_by_embedding(self, *, embeddings: List[List[float]], portfolio_id: uuid.UUID) -> List[PortfolioItem]:
+        queries_cte = values(
+            literal_column("embedding", Vector),
+            name="queries"
+        ).data([(e,) for e in embeddings]).cte()
+        
+        items_alias = aliased(PortfolioItem)
+        lateral_sq = (
+            select(items_alias)
+            .where(items_alias.portfolio_id == portfolio_id) 
+            .order_by(items_alias.embedding.l2_distance(queries_cte.c.embedding))
             .limit(3)
+            .lateral("portfolio_items")
         )
-        return list(result.scalars().all())
+
+        stmt = select(lateral_sq).join(queries_cte, literal_column("true"))
+        results = await self.db.execute(stmt)
+        return list(results.scalars().all())

@@ -12,6 +12,7 @@ from app.db.session import Base
 if TYPE_CHECKING:
     from app.models.user import User
     from app.models.portfolio_item import PortfolioItem
+    from app.models.chat_session import ChatSession
 
 
 class PortfolioStatus(Enum):
@@ -50,4 +51,4 @@ class Portfolio(Base):
     items: Mapped[List["PortfolioItem"]] = relationship(
         back_populates="portfolio"
     )
-    chats: Mapped[List["Chat"]] = relationship(back_populates="portfolio")
+    chat_sessions: Mapped[List["ChatSession"]] = relationship(back_populates="portfolio")

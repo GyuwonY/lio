@@ -22,6 +22,9 @@ async def run_chat(
     final_state = await chat_service.run_chat(
         chat_create=chat_create, session_id=session_id
     )
-    return ChatResponse(answer=final_state["final_answer"])
+    return ChatResponse(
+        answer=final_state.final_answer,
+        session_id=session_id
+    )
 
 

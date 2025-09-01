@@ -102,7 +102,7 @@ class LLMService:
         parsed_qna = await chain.ainvoke({})
         return parsed_qna
 
-    async def generate_vector_queries(
+    async def generate_queries(
         self, *, context: str, user_input: str
     ) -> List[str]:
         parser = PydanticOutputParser(pydantic_object=LLMSplitQueries)

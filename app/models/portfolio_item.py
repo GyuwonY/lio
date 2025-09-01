@@ -38,8 +38,6 @@ class PortfolioItemStatus(Enum):
 
 
 class PortfolioItem(Base):
-    """개별 포트폴리오 항목을 나타내는 모델"""
-
     __tablename__ = "portfolio_items"
 
     id: Mapped[uuid.UUID] = mapped_column(
