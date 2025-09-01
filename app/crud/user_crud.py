@@ -12,6 +12,10 @@ class UserCRUD:
     def __init__(self, db: AsyncSession = Depends(get_db)):
         self.db = db
 
+    async def get_user_by_id(self, *, user_id: int) -> Optional[User]:
+        result = await self.db.execute(select(User).filter(User.id == user_id))
+        return result.scalars().first()
+
     async def get_user_by_email(self, *, email: str) -> Optional[User]:
         result = await self.db.execute(select(User).filter(User.email == email))
         return result.scalars().first()
@@ -19,7 +23,10 @@ class UserCRUD:
     async def create_user(self, *, user_in: UserCreate) -> User:
         db_obj = User(
             email=user_in.email,
-            full_name=user_in.full_name,
+            first_name=user_in.first_name,
+            last_name=user_in.last_name,
+            picture=user_in.picture,
+            locale=user_in.locale,
         )
         self.db.add(db_obj)
         await self.db.flush()

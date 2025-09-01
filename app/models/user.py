@@ -20,8 +20,22 @@ class User(Base):
     email: Mapped[str] = mapped_column(
         String(255), unique=True, index=True, nullable=False
     )
-
-    full_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    
+    first_name: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True
+    )
+    
+    last_name: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True
+    )
+    
+    picture:Mapped[Optional[str]] = mapped_column(
+        String(2048), nullable=True
+    )
+        
+    locale: Mapped[Optional[str]] = mapped_column(
+        String(10), nullable=True
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
