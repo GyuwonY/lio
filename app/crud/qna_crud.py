@@ -1,9 +1,11 @@
 import uuid
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from sqlalchemy import insert
 from typing import List
 from fastapi import Depends
+from sqlalchemy import literal_column, values, insert
+from sqlalchemy.orm import aliased
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from pgvector.sqlalchemy import Vector
 
 from app.models.qna import QnA, QnAStatus
 from app.schemas.qna_schema import QnACreate
@@ -57,20 +59,36 @@ class QnACRUD:
             .where(QnA.id.in_(ids), QnA.user_id == user_id)
         )
         return list(result.scalars().all())
-        
 
-    async def search_qnas_embedding(
-        self, *, portfolio_item_ids: List[uuid.UUID], embedding: List[float],
+    
+    async def search_qnas_by_embeddings(
+        self, *, portfolio_item_ids: List[uuid.UUID], embeddings: List[List[float]],
     ) -> List[QnA]:
-        result = await self.db.execute(
-            select(QnA)
-            .join(PortfolioItem, QnA.portfolio_item_id == PortfolioItem.id)
-            .where(
-                PortfolioItem.portfolio_id.in_(portfolio_item_ids),
-                QnA.status == QnAStatus.CONFIRMED,
-            )
-            .order_by(QnA.question_embedding.cosine_distance(embedding))
-            .limit(10)
+        if not embeddings or not portfolio_item_ids:
+            return []
+
+        queries_cte = values(
+            literal_column("embedding", Vector),
+            name="queries"
+        ).data([(e,) for e in embeddings]).cte()
+
+        qna_alias = aliased(QnA)
+        query = select(qna_alias).where(
+            qna_alias.status == QnAStatus.CONFIRMED
         )
-        return list(result.scalars().all())
+
+        if portfolio_item_ids:
+            query = query.where(
+                qna_alias.portfolio_item_id.in_(portfolio_item_ids)
+            )
+
+        lateral_sq = query.order_by(
+            qna_alias.question_embedding.cosine_distance(queries_cte.c.embedding)
+        ).limit(3).lateral("qnas")
+        
+        stmt = select(lateral_sq).join(queries_cte, literal_column("true"))
+        results = await self.db.execute(stmt)
+        
+        unique_qnas = {qna.id: qna for qna in results.scalars().all()}
+        return list(unique_qnas.values())
         

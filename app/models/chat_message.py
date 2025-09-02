@@ -1,14 +1,26 @@
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING
 import uuid
 from app.db.session import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import DateTime, ForeignKey, Text
+from sqlalchemy import DateTime, ForeignKey, Text, Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 
 if TYPE_CHECKING:
     from app.models.chat_session import ChatSession
+    
+    
+class ChatMessageType(Enum):
+    TECH = "TECH"
+    PERSONAL = "PERSONAL"
+    EDUCATION = "EDUCATION"
+    SUGGEST = "SUGGEST"
+    CONTACT = "CONTACT"
+    ETC = "ETC"
+    
+
 
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
@@ -16,6 +28,8 @@ class ChatMessage(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
+    
+    type: Mapped[ChatMessageType] = mapped_column(SQLAlchemyEnum(ChatMessageType), nullable=False)
     
     chat_session_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("chat_sessions.id"), nullable=False

@@ -1,17 +1,17 @@
 from fastapi import APIRouter, Depends, Cookie, HTTPException, status
-from app.schemas.chat_schema import ChatCreate, ChatResponse
-from app.services.chat_service import ChatService
+from app.schemas.chat_message_schema import ChatMessageCreate, ChatMessageResponse
+from app.services.chat_message_service import ChatMessageService
 from typing import Annotated
 
 router = APIRouter()
 
 
-@router.post("", response_model=ChatResponse)
+@router.post("/", response_model=ChatMessageResponse)
 async def run_chat(
-    chat_service: ChatService = Depends(),
+    chat_service: ChatMessageService = Depends(),
     session_id: Annotated[str | None, Cookie()] = None,
     *,
-    chat_create: ChatCreate,
+    chat_create: ChatMessageCreate,
 ):
     if not session_id:
         raise HTTPException(
@@ -22,7 +22,7 @@ async def run_chat(
     final_state = await chat_service.run_chat(
         chat_create=chat_create, session_id=session_id
     )
-    return ChatResponse(
+    return ChatMessageResponse(
         answer=final_state.final_answer,
         session_id=session_id
     )

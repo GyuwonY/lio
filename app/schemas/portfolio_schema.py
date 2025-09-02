@@ -1,6 +1,6 @@
 import uuid
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import date, datetime
 from typing import List, Optional
 from app.models.portfolio_item import PortfolioItemType
 from app.models.portfolio import PortfolioStatus
@@ -79,3 +79,11 @@ class UploadURLResponse(BaseModel):
 
 class PortfolioDelete(BaseModel):
     portfolio_item_ids: List[uuid.UUID]
+
+class PortfolioItemLLMInput(BaseModel):
+    type: str
+    topic: Optional[str]
+    start_date: Optional[date]
+    end_date: Optional[date]
+    content: str
+    tech_stack: Optional[List[str]]

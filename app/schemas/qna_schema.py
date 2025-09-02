@@ -33,3 +33,7 @@ class QnAsDelete(BaseModel):
 
 class QnAsConfirm(BaseModel):
     qna_ids: List[uuid.UUID]
+
+class QnALLMInput(BaseModel):
+    answer: str
+    

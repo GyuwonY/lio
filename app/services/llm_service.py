@@ -13,12 +13,15 @@ from app.core.prompts import (
     STRUCTURE_PORTFOLIO_USER_PROMPT,
     VECTOR_QUERY_GENERATOR_SYSTEM_PROMPT,
     VECTOR_QUERY_GENERATOR_USER_PROMPT,
+    GENERATE_CHAT_ANSWER_SYSTEM_PROMPT,
+    GENERATE_CHAT_ANSWER_USER_PROMPT,
 )
 from app.models.portfolio_item import PortfolioItem
 from app.schemas.llm_schema import (
     LLMPortfolio,
     LLMQnAOutput,
     LLMSplitQueries,
+    LLMChatAnswer,
 )
 
 
@@ -128,3 +131,31 @@ class LLMService:
 
         response = await chain.ainvoke({})
         return response.queries
+
+    async def generate_chat_answer(
+        self, *, conversation_history: str, portfolio_context: str, user_input: str
+    ) -> LLMChatAnswer:
+        parser = PydanticOutputParser(pydantic_object=LLMChatAnswer)
+
+        fix_parser = OutputFixingParser.from_llm(
+            parser=parser, llm=self.chat_model
+        )
+
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", GENERATE_CHAT_ANSWER_SYSTEM_PROMPT),
+                ("human", GENERATE_CHAT_ANSWER_USER_PROMPT),
+            ]
+        )
+
+        prompt = prompt.partial(
+            format_instructions=parser.get_format_instructions(),
+            conversation_history=conversation_history,
+            portfolio_context=portfolio_context,
+            user_input=user_input,
+        )
+
+        chain = prompt | self.chat_model | fix_parser
+
+        response = await chain.ainvoke({})
+        return response.answer

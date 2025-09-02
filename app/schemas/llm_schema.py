@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
+from app.models.chat_message import ChatMessageType
 from app.models.portfolio_item import PortfolioItemType
 
 
@@ -43,3 +44,12 @@ class LLMPortfolio(BaseModel):
 
 class LLMSplitQueries(BaseModel):
     queries: List[str]
+
+
+class LLMChatAnswer(BaseModel):
+    type: ChatMessageType = Field(
+        description="항목 유형. 반드시 'TECH','PERSONAL','EDUCATION','SUGGEST','CONTACT','ETC' 중 하나여야 함"
+    )
+    answer: str = Field(
+        description="질문에 대한 응답"
+    )
