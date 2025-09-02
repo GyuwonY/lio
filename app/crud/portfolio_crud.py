@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from app.db.session import get_db
 from app.models.portfolio import Portfolio, PortfolioSourceType, PortfolioStatus
-from app.models.portfolio_item import PortfolioItem, PortfolioItemStatus, PortfolioItemType
+from app.models.portfolio_item import PortfolioItem, PortfolioItemStatus
 
 
 class PortfolioCRUD:
@@ -15,12 +15,8 @@ class PortfolioCRUD:
 
 
     async def get_portfolios_by_user(self, *, user_id: int) -> List[Portfolio]:
-        """사용자의 모든 포트폴리오 목록을 조회합니다 (items 포함)."""
         result = await self.db.execute(
             select(Portfolio)
-            .options(
-                selectinload(Portfolio.items.and_(PortfolioItem.status != PortfolioItemStatus.DELETED))
-            )
             .where(
                 Portfolio.user_id == user_id,
                 Portfolio.status != PortfolioStatus.DELETED,
@@ -28,6 +24,35 @@ class PortfolioCRUD:
         )
         return list(result.scalars().unique().all())
 
+
+    async def get_portfolio_by_id_without_item(self, *, portfolio_id: int, user_id: int) -> Portfolio | None:
+        result = await self.db.execute(
+            select(Portfolio)
+            .where(
+                Portfolio.id == portfolio_id,
+                Portfolio.user_id == user_id
+            )
+        )
+        return result.scalars().first()
+    
+    
+    async def get_confirmed_portfolio_by_id(
+        self, *, portfolio_id: int, user_id: int
+    ) -> Portfolio | None:
+        """ID와 사용자 ID로 특정 포트폴리오를 조회합니다 (items 포함)."""
+        result = await self.db.execute(
+            select(Portfolio)
+            .options(
+                selectinload(Portfolio.items.and_(PortfolioItem.status == PortfolioItemStatus.CONFIRMED))
+            )
+            .where(
+                Portfolio.id == portfolio_id,
+                Portfolio.user_id == user_id,
+                Portfolio.status == PortfolioStatus.CONFIRMED,
+            )
+        )
+        return result.scalars().first()
+    
 
     async def get_portfolio_by_id(
         self, *, portfolio_id: int, user_id: int
@@ -45,30 +70,6 @@ class PortfolioCRUD:
             )
         )
         return result.scalars().first()
-
-
-    async def get_portfolio_item_by_ids(
-        self, *, portfolio_item_ids: List[int]
-    ) -> List[PortfolioItem]:
-        result = await self.db.execute(
-            select(PortfolioItem).where(
-                PortfolioItem.id.in_(portfolio_item_ids), 
-                PortfolioItem.status != PortfolioItemStatus.DELETED
-            )
-        )
-        return list(result.scalars().all())
-    
-    async def get_confirmed_portfolio_items_by_portfolio_id(
-        self, *, portfolio_id: int, portfolio_item_type: PortfolioItemType
-    ) -> List[PortfolioItem]:
-        result = await self.db.execute(
-            select(PortfolioItem).where(
-                PortfolioItem.portfolio_id == portfolio_id, 
-                PortfolioItem.status == PortfolioItemStatus.CONFIRMED,
-                PortfolioItem.type == portfolio_item_type
-            )
-        )
-        return list(result.scalars().all())
 
 
     async def create_portfolio(
@@ -111,20 +112,6 @@ class PortfolioCRUD:
         db_portfolio.status = PortfolioStatus.DELETED
 
         for item in db_portfolio.items:
-            item.status = PortfolioItemStatus.DELETED
-
-        await self.db.flush()
-        return True
-
-
-    async def delete_portfolio_items(self, *, portfolio_item_ids: List[int]) -> bool:
-        db_portfolio_items = await self.get_portfolio_item_by_ids(
-            portfolio_item_ids=portfolio_item_ids
-        )
-        if not db_portfolio_items:
-            return False
-
-        for item in db_portfolio_items:
             item.status = PortfolioItemStatus.DELETED
 
         await self.db.flush()

@@ -1,42 +1,11 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import List, Optional
-from app.models.portfolio_item import PortfolioItemType
 from app.models.portfolio import PortfolioStatus
-
-
-# PortfolioItem 관련 스키마
-class PortfolioItemBase(BaseModel):
-    type: PortfolioItemType
-    topic: Optional[str] = None
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
-    content: str
-    tech_stack: Optional[List[str]] = None
-
-
-class PortfolioItemCreate(PortfolioItemBase):
-    pass
-
-
-class PortfolioItemRead(PortfolioItemBase):
-    id: int
-    portfolio_id: int
-    created_at: datetime
-
-
-class PortfolioItemUpdate(BaseModel):
-    id: int
-    type: PortfolioItemType
-    topic: str
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
-    content: str
-    tech_stack: Optional[List[str]] = None
-
-
-class PortfolioItemsUpdate(BaseModel):
-    items: List[PortfolioItemUpdate]
+from app.schemas.portfolio_item_schema import (
+    PortfolioItemCreate,
+    PortfolioItemRead,
+)
 
 
 class PortfolioBase(BaseModel):
@@ -45,7 +14,7 @@ class PortfolioBase(BaseModel):
 
 class PortfolioCreateFromText(PortfolioBase):
     """텍스트 입력을 통한 포트폴리오 생성을 위한 요청 스키마"""
-
+    name: Optional[str]
     text_items: List[PortfolioItemCreate]
 
 
@@ -61,11 +30,15 @@ class PortfolioRead(PortfolioBase):
     id: int
     user_id: int
     status: PortfolioStatus
+    name: Optional[str] = None
     source_type: str
     source_url: Optional[str] = None
     created_at: datetime
     items: List[PortfolioItemRead] = []
 
+
+class PortfolioUpdate(PortfolioBase):
+    name: Optional[str] = None
 
 class PortfolioConfirm(BaseModel):
     portfolio_id: int
@@ -75,6 +48,3 @@ class UploadURLResponse(BaseModel):
     upload_url: str
     file_path: str
 
-
-class PortfolioDelete(BaseModel):
-    portfolio_item_ids: List[int]

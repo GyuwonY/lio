@@ -2,12 +2,15 @@ from typing import List
 from fastapi import Depends, HTTPException, status
 
 from app.crud.portfolio_crud import PortfolioCRUD
+from app.crud.user_crud import UserCRUD
 from app.models.portfolio_item import PortfolioItem, PortfolioItemStatus
+from app.schemas.portfolio_item_schema import PortfolioItemRead
 from app.schemas.portfolio_schema import (
     PortfolioCreateFromText,
     PortfolioCreateWithPdf,
-    PortfolioItemsUpdate,
     PortfolioConfirm,
+    PortfolioRead,
+    PortfolioUpdate,
 )
 from app.models.user import User
 from app.models.portfolio import Portfolio, PortfolioSourceType, PortfolioStatus
@@ -19,10 +22,12 @@ class PortfolioService:
     def __init__(
         self,
         crud: PortfolioCRUD = Depends(),
+        user_crud: UserCRUD = Depends(),
         rag_service: RAGService = Depends(),
         llm_service: LLMService = Depends(),
     ):
         self.crud = crud
+        self.user_crud = user_crud
         self.rag_service = rag_service
         self.llm_service = llm_service
 
@@ -124,7 +129,7 @@ class PortfolioService:
 
     async def confirm_portfolio(
         self, *, confirm_in: PortfolioConfirm, current_user: User
-    ) -> Portfolio:
+    ) -> PortfolioRead:
         portfolio = await self.crud.get_portfolio_by_id(
             portfolio_id=confirm_in.portfolio_id, user_id=current_user.id
         )
@@ -147,57 +152,74 @@ class PortfolioService:
             item.embedding = embedding
             item.status = PortfolioItemStatus.CONFIRMED
 
+        return PortfolioRead(
+            id=portfolio.id,
+            user_id=portfolio.user_id,
+            status=portfolio.status,
+            name=portfolio.name,
+            source_type=portfolio.source_type.value,
+            source_url=portfolio.source_url,
+            created_at=portfolio.created_at,
+            items=[PortfolioItemRead(
+                id=portfolio_item.id,
+                portfolio_id=portfolio_item.portfolio_id,
+                created_at=portfolio_item.created_at,
+                type=portfolio_item.type,
+                topic=portfolio_item.topic,
+                start_date=portfolio_item.start_date,
+                end_date=portfolio_item.end_date,
+                content=portfolio_item.content,
+                tech_stack=portfolio_item.tech_stack,
+            ) for portfolio_item in portfolio.items]
+        )
+
+
+    async def get_portfolios_by_user(self, *, current_user: User) -> List[PortfolioRead]:
+        portfolios = await self.crud.get_portfolios_by_user(user_id=current_user.id)
+        return [PortfolioRead(
+            id=portfolio.id,
+            user_id=portfolio.user_id,
+            status=portfolio.status,
+            name=portfolio.name,
+            source_type=portfolio.source_type.value,
+            source_url=portfolio.source_url,
+            created_at=portfolio.created_at,
+        ) for portfolio in portfolios]
+
+
+    async def get_portfolio_by_id(self, *, portfolio_id: int, current_user: User) -> Portfolio:
+        """ID로 특정 포트폴리오를 조회합니다."""
+        portfolio = await self.crud.get_portfolio_by_id(
+            portfolio_id=portfolio_id, user_id=current_user.id
+        )
+        if not portfolio:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="포트폴리오를 찾을 수 없거나 해당 포트폴리오에 접근할 권한이 없습니다.",
+            )
         return portfolio
 
 
-    async def get_user_portfolios(self, *, current_user: User) -> List[Portfolio]:
-        return await self.crud.get_portfolios_by_user(user_id=current_user.id)
+    async def get_portfolio_by_email_and_id(
+        self, *, email: str, portfolio_id: int
+    ) -> Portfolio:
+        """이메일과 ID로 특정 포트폴리오를 조회합니다."""
+        user = await self.user_crud.get_user_by_email(email=email)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"{email} 사용자를 찾을 수 없습니다.",
+            )
 
-
-    async def update_portfolio_items(
-        self, *, items_in: PortfolioItemsUpdate, current_user: User
-    ) -> List[PortfolioItem]:
-        item_ids = [item.id for item in items_in.items]
-        portfolio_items = await self.crud.get_portfolio_item_by_ids(
-            portfolio_item_ids=item_ids
+        portfolio = await self.crud.get_confirmed_portfolio_by_id(
+            portfolio_id=portfolio_id, user_id=user.id
         )
-        item_update_dict = {item.id: item for item in items_in.items}
-
-        items_to_re_embed = []
-        for item in portfolio_items:
-            if (
-                item.status == PortfolioItemStatus.CONFIRMED
-                and item.content != item_update_dict[item.id].content
-            ):
-                items_to_re_embed.append(item)
-
-        if items_to_re_embed:
-            embeddings = await self.rag_service.embed_portfolio_items(
-                items=items_to_re_embed
+        if not portfolio:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="포트폴리오를 찾을 수 없거나 해당 포트폴리오에 접근할 권한이 없습니다.",
             )
-            embedding_map = {
-                item.id: emb for item, emb in zip(items_to_re_embed, embeddings)
-            }
-        else:
-            embedding_map = {}
-
-        for item in portfolio_items:
-            item_update = item_update_dict[item.id]
-            if embedding_map.get(item.id):
-                item.embedding = embedding_map[item.id]
-
-            item.content = item_update.content
-            item.start_date = (
-                item_update.start_date if item_update.start_date else item.start_date
-            )
-            item.end_date = (
-                item_update.end_date if item_update.end_date else item.end_date
-            )
-            item.topic = item_update.topic
-            item.type = item_update.type
-            item.tech_stack = item_update.tech_stack
-
-        return portfolio_items
+        return portfolio
 
 
     async def delete_portfolio(self, *, portfolio_id: int, current_user: User) -> None:
@@ -211,17 +233,27 @@ class PortfolioService:
                 detail="삭제할 포트폴리오를 찾을 수 없거나 권한이 없습니다.",
             )
         return None
-
-
-    async def delete_portfolio_items(
-        self, *, portfolio_item_ids: List[int], current_user: User
-    ) -> None:
-        deleted = await self.crud.delete_portfolio_items(
-            portfolio_item_ids=portfolio_item_ids
+    
+    async def update_portfolio(self, *, current_user: User, portfolio_id: int, portfolio_update: PortfolioUpdate) -> PortfolioRead:
+        portfolio = await self.crud.get_portfolio_by_id_without_item(
+            portfolio_id=portfolio_id,
+            user_id=current_user.id
         )
-        if not deleted:
+        
+        if not portfolio:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="삭제할 포트폴리오를 찾을 수 없거나 권한이 없습니다.",
+                detail="포트폴리오를 찾을 수 없거나 해당 포트폴리오에 접근할 권한이 없습니다.",
             )
-        return None
+        
+        portfolio.name = portfolio_update.name
+        return PortfolioRead(
+            id=portfolio.id,
+            user_id=portfolio.user_id,
+            status=portfolio.status,
+            name=portfolio.name,
+            source_type=portfolio.source_type.value,
+            source_url=portfolio.source_url,
+            created_at=portfolio.created_at,
+        )
+    

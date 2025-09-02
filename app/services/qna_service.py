@@ -2,6 +2,7 @@ import asyncio
 from typing import List
 from fastapi import Depends, HTTPException, status
 
+from app.crud.portfolio_item_crud import PortfolioItemCRUD
 from app.crud.qna_crud import QnACRUD
 from app.crud.portfolio_crud import PortfolioCRUD
 from app.models.qna import QnA, QnAStatus
@@ -20,12 +21,12 @@ class QnAService:
     def __init__(
         self,
         qna_crud: QnACRUD = Depends(),
-        portfolio_crud: PortfolioCRUD = Depends(),
         llm_service: LLMService = Depends(),
         rag_service: RAGService = Depends(),
+        portfolio_item_crud: PortfolioItemCRUD = Depends(),
     ):
         self.qna_crud = qna_crud
-        self.portfolio_crud = portfolio_crud
+        self.portfolio_item_crud = portfolio_item_crud
         self.llm_service = llm_service
         self.rag_service = rag_service
 
@@ -51,7 +52,7 @@ class QnAService:
             return []
 
     async def generate_qna_for_all_portfolios_background(self, *, current_user: User, portfolio_id: int, portfolio_item_type: PortfolioItemType) -> List[QnA]:
-        portfolio_items = await self.portfolio_crud.get_confirmed_portfolio_items_by_portfolio_id(
+        portfolio_items = await self.portfolio_item_crud.get_confirmed_portfolio_items_by_portfolio_id(
             portfolio_id=portfolio_id, portfolio_item_type=portfolio_item_type
         )
         

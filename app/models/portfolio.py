@@ -1,6 +1,6 @@
 from enum import Enum
 from datetime import datetime
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import String, DateTime, ForeignKey, Enum as SQLAlchemyEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -29,6 +29,9 @@ class Portfolio(Base):
     __tablename__ = "portfolios"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    
+    name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
 
     status: Mapped[PortfolioStatus] = mapped_column(
