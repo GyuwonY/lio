@@ -1,10 +1,11 @@
 import logging
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
+import redis.asyncio as redis
 
 from app.api.v1.api import api_router
 from app.core.config import settings
-from app.db.session import async_engine, Base, redis_client
+from app.db.session import async_engine, Base
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -21,9 +22,21 @@ async def lifespan(app: FastAPI):
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
+    # Create Redis connection pool and client
+    redis_pool = redis.ConnectionPool(
+        host=settings.REDIS_URL,
+        port=6379,
+        password=settings.REDIS_PASSWORD,
+        encoding="utf-8",
+        decode_responses=True
+    )
+    app.state.redis = redis.Redis(connection_pool=redis_pool)
+    
     yield
     
-    await redis_client.close()
+    # Shutdown
+    await app.state.redis.close()
+    await async_engine.dispose()
 
 
 app = FastAPI(

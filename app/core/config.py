@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     # Database and Services
     DATABASE_URL: str = Field(..., env="DATABASE_URL")
     REDIS_URL: str = Field(..., env="REDIS_URL")
+    REDIS_PASSWORD: str = Field(..., env="REDIS_PASSWORD")
 
     # JWT Settings
     ACCESS_TOKEN_SECRET_KEY: str = Field(..., env="ACCESS_TOKEN_SECRET_KEY")
