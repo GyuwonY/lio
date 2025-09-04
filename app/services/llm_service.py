@@ -1,7 +1,7 @@
 import json
 from typing import List
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import PydanticOutputParser
+from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
 from langchain.output_parsers import OutputFixingParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 
@@ -15,6 +15,8 @@ from app.core.prompts import (
     VECTOR_QUERY_GENERATOR_USER_PROMPT,
     GENERATE_CHAT_ANSWER_SYSTEM_PROMPT,
     GENERATE_CHAT_ANSWER_USER_PROMPT,
+    SUMMARIZE_CONVERSATION_SYSTEM_PROMPT,
+    SUMMARIZE_CONVERSATION_USER_PROMPT,
 )
 from app.models.portfolio_item import PortfolioItem
 from app.schemas.llm_schema import (
@@ -47,6 +49,12 @@ class LLMService:
             model=settings.CHAT_LLM_MODEL,
             google_api_key=settings.GEMINI_API_KEY,
             temperature=0.8,
+            convert_system_message_to_human=True,
+        )
+        self.summarize_model = ChatGoogleGenerativeAI(
+            model=settings.CHAT_LLM_MODEL,
+            google_api_key=settings.GEMINI_API_KEY,
+            temperature=0.2,
             convert_system_message_to_human=True,
         )
 
@@ -159,3 +167,22 @@ class LLMService:
 
         response = await chain.ainvoke({})
         return response.answer
+
+    async def summarize_conversation(self, *, conversation_history: str) -> str:
+        parser = StrOutputParser()
+        
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", SUMMARIZE_CONVERSATION_SYSTEM_PROMPT),
+                ("user", SUMMARIZE_CONVERSATION_USER_PROMPT),
+            ]
+        )
+        
+        prompt = prompt.partial(
+            conversation_history=conversation_history,
+        )
+        
+        chain = prompt | self.summarize_model | parser
+        
+        response = await chain.ainvoke({})
+        return response

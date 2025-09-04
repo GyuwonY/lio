@@ -19,11 +19,11 @@ async def run_chat(
             detail="Session ID not found in cookies",
         )
         
-    final_state = await chat_service.run_chat(
+    answer = await chat_service.run_chat(
         chat_create=chat_create, session_id=session_id
     )
     return ChatMessageResponse(
-        answer=final_state.final_answer,
+        answer=answer,
         session_id=session_id
     )
 

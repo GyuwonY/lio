@@ -1,10 +1,11 @@
 
+from typing import List
 import uuid
 import redis.asyncio as aioredis
 from fastapi import Depends
 
 from app.db.session import get_redis_client
-from app.schemas.chat_session_schema import ChatContext
+from app.schemas.chat_session_schema import ChatContext, ConversationTurn
 from app.crud.chat_session_crud import ChatSessionCRUD
 from app.models.chat_session import ChatSession
 
@@ -47,4 +48,12 @@ class ChatSessionService:
         if session_data_str:
             return ChatContext.model_validate_json(session_data_str)
         return None
+    
+    async def update_session(self, session_id: str, context: List[ConversationTurn]):
+        session_data = ChatContext(context=context)
+        await self.redis_client.set(
+            f"session:{session_id}",
+            session_data.model_dump_json(),
+            ex=self.context_expire_time,
+        )
 

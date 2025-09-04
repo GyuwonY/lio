@@ -4,6 +4,8 @@ import json
 from fastapi import Depends, HTTPException, status
 from langgraph.graph import StateGraph, END
 from pydantic import BaseModel, Field
+from app.crud.chat_message_crud import ChatMessageCRUD
+from app.crud.chat_session_crud import ChatSessionCRUD
 from app.models.portfolio import Portfolio
 from app.models.user import User
 from app.schemas.chat_message_schema import ChatMessageCreate, GraphStateQuery
@@ -18,7 +20,6 @@ from app.services.rag_service import RAGService
 
 from app.services.chat_session_service import ChatSessionService
 from app.schemas.chat_session_schema import ConversationTurn
-
 
 class GraphState(BaseModel):
     user: User
@@ -38,6 +39,8 @@ class ChatMessageService:
         portfolio_crud: PortfolioCRUD = Depends(),
         qna_crud: QnACRUD = Depends(),
         user_crud: UserCRUD = Depends(),
+        chat_message_crud: ChatMessageCRUD = Depends(),
+        chat_session_crud: ChatSessionCRUD = Depends(),
         llm_service: LLMService = Depends(),
         rag_service: RAGService = Depends(),
         session_service: ChatSessionService = Depends(),
@@ -45,9 +48,12 @@ class ChatMessageService:
         self.portfolio_crud = portfolio_crud
         self.qna_crud = qna_crud
         self.user_crud = user_crud
+        self.chat_message_crud = chat_message_crud
+        self.chat_session_crud = chat_session_crud
         self.llm_service = llm_service
         self.rag_service = rag_service
         self.session_service = session_service
+        
 
         workflow = StateGraph(GraphState)
 
@@ -60,6 +66,7 @@ class ChatMessageService:
         workflow.add_node("retrieve_qnas", self.retrieve_qnas)
         workflow.add_node("generate_chat_message", self.generate_chat_message)
         workflow.add_node("save_chat", self.save_chat)
+        workflow.add_node("update_context_in_session", self.update_context_in_session)
 
         workflow.set_entry_point("get_context_from_session")
         workflow.add_edge("get_context_from_session", "generate_queries_node")
@@ -81,6 +88,7 @@ class ChatMessageService:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
             )
+        
         return {"context": session_data.context or []}
 
     async def generate_queries_node(self, state: GraphState) -> dict:
@@ -98,7 +106,7 @@ class ChatMessageService:
         
         return {"graph_state_queries": graph_state_queries}
     
-    async def should_embed_queries_node(self, state: GraphState):
+    def should_embed_queries_node(self, state: GraphState):
         if state.graph_state_queries:
             return "embed_queries"
         else:
@@ -110,15 +118,20 @@ class ChatMessageService:
         ]
         embeddings = await self.rag_service.embed_queries(queries=queries)
 
+        updated_queries = []
         for graph_state_query, embedding in zip(state.graph_state_queries, embeddings):
-            graph_state_query.embedding = embedding
+            updated_queries.append(GraphStateQuery(query=graph_state_query.query, embedding=embedding))
 
-        return {"graph_state_queries": state.graph_state_queries}
+        return {"graph_state_queries": updated_queries}
 
     async def retrieve_portfolio_items(self, state: GraphState):
         if not state.graph_state_queries:
-            return {"portfolio_item_ids": []}
-        embeddings = [graph_state_query.embedding for graph_state_query in state.graph_state_queries]
+            return {"portfolio_item_ids": [], "portfolio_items": []}
+        
+        embeddings = [graph_state_query.embedding for graph_state_query in state.graph_state_queries if graph_state_query.embedding]
+        if not embeddings:
+            return {"portfolio_item_ids": [], "portfolio_items": []}
+
         portfolio_items = await self.portfolio_crud.search_portfolio_items_by_embedding(embeddings=embeddings, portfolio_id=state.portfolio.id)
         
         return {
@@ -155,9 +168,12 @@ class ChatMessageService:
             [f"Human: {c.input}\nAI: {c.answer}" for c in state.context]
         )
 
+        portfolio_items_dump = [item.model_dump() for item in state.portfolio_items]
+        qnas_dump = [qna.model_dump() for qna in state.qnas]
+
         portfolio_context = {
-            "portfolio_items": [item.model_dump() for item in state.portfolio_items],
-            "qnas": [qna.model_dump() for qna in state.qnas],
+            "portfolio_items": portfolio_items_dump,
+            "qnas": qnas_dump,
         }
         
         llm_chat_answer = await self.llm_service.generate_chat_answer(
@@ -165,19 +181,73 @@ class ChatMessageService:
             portfolio_context=json.dumps(portfolio_context, ensure_ascii=False),
             user_input=state.input,
         )
-
-        chat_message = LLMChatAnswer(
-            answer=llm_chat_answer.answer,
-            type=llm_chat_answer.type,
-        )
         
-        return {"chat_message": chat_message}
+        return {"chat_message": llm_chat_answer}
 
     async def save_chat(self, state: GraphState):
+        chat_session = await self.chat_session_crud.get_chat_session_by_session_id(
+            session_id=state.session_id
+        )
+        if not chat_session:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Chat session not found",
+            )
+            
+        if not state.chat_message:
+            return {}
+            
+        await self.chat_message_crud.create_chat_message(
+            chat_session_id=chat_session.id,
+            question=state.input,
+            answer=state.chat_message.answer,
+            type=state.chat_message.type,
+        )
         
         return {}
 
-    async def run_chat(self, chat_create: ChatMessageCreate, session_id: str):
+    async def update_context_in_session(self, state: GraphState):
+        current_context = state.context
+        
+        if not state.chat_message:
+            return {}
+        
+        new_turn = ConversationTurn(
+            input=state.input,
+            answer=state.chat_message.answer,
+        )
+        current_context.append(new_turn)
+        
+        if len(current_context) > 10:
+            summary_turns = current_context[:-3]
+            recent_turns = current_context[-3:]
+            
+            history_to_summarize = "\n".join(
+                [f"Human: {c.input}\nAI: {c.answer}" for c in summary_turns]
+            )
+            
+            summary = await self.llm_service.summarize_conversation(
+                conversation_history=history_to_summarize
+            )
+            
+            summarized_turn = ConversationTurn(
+                input="지난 대화 요약",
+                answer=summary,
+            )
+            
+            current_context = [summarized_turn] + recent_turns
+
+        if len(current_context) > 20:
+            current_context = current_context[-20:]
+            
+        await self.session_service.update_session(
+            session_id=state.session_id,
+            context=current_context,
+        )
+        
+        return {}
+
+    async def run_chat(self, chat_create: ChatMessageCreate, session_id: str) -> str:
         user = await self.user_crud.get_user_by_email(email=chat_create.email)
         if not user:
             raise HTTPException(
@@ -194,12 +264,12 @@ class ChatMessageService:
                 detail="존재하지 않는 포트폴리오",
             )
 
-        state = GraphState(
+        initial_state = GraphState(
             user=user,
             session_id=session_id,
             portfolio=portfolio,
             input=chat_create.question,
         )
 
-        final_state = await self.graph.ainvoke(state)
-        return final_state
+        final_state = await self.graph.ainvoke(initial_state)
+        return final_state['chat_message'].answer

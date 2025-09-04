@@ -236,3 +236,13 @@ GENERATE_CHAT_ANSWER_USER_PROMPT = """
 * `포트폴리오 컨텍스트`: {portfolio_context}
 * `사용자 입력`: {user_input}
 """
+
+SUMMARIZE_CONVERSATION_SYSTEM_PROMPT = """
+당신은 대화 내용을 한 문단으로 요약하는 AI입니다.
+주어진 대화 내용을 기반으로 전체 맥락을 파악하여 간결하게 한 문단으로 요약해 주세요.
+"""
+
+SUMMARIZE_CONVERSATION_USER_PROMPT = """
+대화 내용:
+{conversation_history}
+"""
