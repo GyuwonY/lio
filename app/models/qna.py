@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 import uuid
 from datetime import datetime
 from enum import Enum
@@ -9,8 +10,9 @@ from sqlalchemy.sql import func
 from pgvector.sqlalchemy import Vector
 
 from app.db.session import Base
-from app.models.portfolio_item import PortfolioItem
-from app.models.user import User
+if TYPE_CHECKING:
+    from app.models.portfolio_item import PortfolioItem
+    from app.models.user import User
 
 
 class QnAStatus(Enum):
@@ -52,5 +54,5 @@ class QnA(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    user: Mapped[User] = relationship(back_populates="user")
-    portfolio_item: Mapped[PortfolioItem] = relationship(back_populates="qnas")
+    user: Mapped["User"] = relationship()
+    portfolio_item: Mapped["PortfolioItem"] = relationship(back_populates="qnas")
