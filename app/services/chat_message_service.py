@@ -1,9 +1,9 @@
-from typing import List
+from typing import List, Optional
 import uuid
 import json
 from fastapi import Depends, HTTPException, status
 from langgraph.graph import StateGraph, END
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from app.crud.chat_message_crud import ChatMessageCRUD
 from app.crud.chat_session_crud import ChatSessionCRUD
 from app.models.portfolio import Portfolio
@@ -22,16 +22,15 @@ from app.services.chat_session_service import ChatSessionService
 from app.schemas.chat_session_schema import ConversationTurn
 
 class GraphState(BaseModel):
-    user: User
     session_id: str
     input: str
-    portfolio: Portfolio
+    portfolio_id: uuid.UUID
     context: List[ConversationTurn] = Field(default_factory=list)
     graph_state_queries: List[GraphStateQuery] = Field(default_factory=list)
     portfolio_item_ids: List[uuid.UUID] = Field(default_factory=list)
     portfolio_items: List[PortfolioItemLLMInput] = Field(default_factory=list)
     qnas: List[QnALLMInput] = Field(default_factory=list)
-    chat_message: LLMChatAnswer | None = None
+    chat_message: Optional[LLMChatAnswer] = None
 
 
 class ChatMessageService:
@@ -132,7 +131,7 @@ class ChatMessageService:
         if not embeddings:
             return {"portfolio_item_ids": [], "portfolio_items": []}
 
-        portfolio_items = await self.portfolio_crud.search_portfolio_items_by_embedding(embeddings=embeddings, portfolio_id=state.portfolio.id)
+        portfolio_items = await self.portfolio_crud.search_portfolio_items_by_embedding(embeddings=embeddings, portfolio_id=state.portfolio_id)
         
         return {
             "portfolio_items": [PortfolioItemLLMInput(
@@ -265,9 +264,8 @@ class ChatMessageService:
             )
 
         initial_state = GraphState(
-            user=user,
             session_id=session_id,
-            portfolio=portfolio,
+            portfolio_id=portfolio.id,
             input=chat_create.question,
         )
 
