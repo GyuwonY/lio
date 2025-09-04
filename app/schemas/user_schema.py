@@ -6,7 +6,10 @@ from typing import Optional
 
 class UserBase(BaseModel):
     email: EmailStr
-    full_name: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    picture: Optional[str] = None
+    locale: Optional[str] = None
 
 
 class UserCreate(UserBase):
@@ -16,6 +19,11 @@ class UserCreate(UserBase):
 class UserRead(UserBase):
     id: uuid.UUID
     created_at: datetime
+
+class UserResponse(UserBase):
+    id: uuid.UUID
+    created_at: datetime
+
 
 
 

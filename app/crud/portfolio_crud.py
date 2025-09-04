@@ -20,9 +20,6 @@ class PortfolioCRUD:
     async def get_portfolios_by_user(self, *, user_id: uuid.UUID) -> List[Portfolio]:
         result = await self.db.execute(
             select(Portfolio)
-            .options(
-                selectinload(Portfolio.items.and_(PortfolioItem.status != PortfolioItemStatus.DELETED))
-            )
             .where(
                 Portfolio.user_id == user_id,
                 Portfolio.status != PortfolioStatus.DELETED,
@@ -30,6 +27,35 @@ class PortfolioCRUD:
         )
         return list(result.scalars().unique().all())
 
+
+    async def get_portfolio_by_id_without_item(self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID) -> Portfolio | None:
+        result = await self.db.execute(
+            select(Portfolio)
+            .where(
+                Portfolio.id == portfolio_id,
+                Portfolio.user_id == user_id
+            )
+        )
+        return result.scalars().first()
+    
+    
+    async def get_confirmed_portfolio_by_id(
+        self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
+    ) -> Portfolio | None:
+
+        result = await self.db.execute(
+            select(Portfolio)
+            .options(
+                selectinload(Portfolio.items.and_(PortfolioItem.status == PortfolioItemStatus.CONFIRMED))
+            )
+            .where(
+                Portfolio.id == portfolio_id,
+                Portfolio.user_id == user_id,
+                Portfolio.status == PortfolioStatus.CONFIRMED,
+            )
+        )
+        return result.scalars().first()
+    
 
     async def get_portfolio_by_id(
         self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
@@ -127,8 +153,7 @@ class PortfolioCRUD:
 
         await self.db.flush()
         return True
-
-
+    
     async def search_portfolio_items_by_embedding(self, *, embeddings: List[List[float]], portfolio_id: uuid.UUID) -> List[PortfolioItem]:
         queries_cte = values(
             literal_column("embedding", Vector),

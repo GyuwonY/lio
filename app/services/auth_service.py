@@ -76,7 +76,13 @@ class AuthService:
 
         user = await self.user_crud.get_user_by_email(email=email)
         if not user:
-            user_in = UserCreate(email=email, full_name=google_user_info.get("name"))
+            user_in = UserCreate(
+                email=email,
+                first_name=google_user_info.get("given_name"),
+                last_name=google_user_info.get("family_name"),
+                picture=google_user_info.get("picture"),
+                locale=google_user_info.get("locale"),
+            )
             user = await self.user_crud.create_user(user_in=user_in)
 
         return {

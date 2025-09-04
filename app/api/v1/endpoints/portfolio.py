@@ -3,10 +3,9 @@ from typing import List, Any
 from fastapi import APIRouter, Depends, Body, HTTPException, status
 
 from app.schemas.portfolio_schema import (
-    PortfolioDelete,
     PortfolioRead,
+    PortfolioUpdate,
     UploadURLResponse,
-    PortfolioItemsUpdate,
     PortfolioCreateFromText,
     PortfolioCreateWithPdf,
     PortfolioConfirm,
@@ -41,13 +40,27 @@ async def get_upload_url(
     return UploadURLResponse(upload_url=url, file_path=file_path)
 
 
+@router.get("/{email}/{portfolio_id}", response_model=PortfolioRead)
+async def get_portfolio_by_email_and_id(
+    email: str,
+    portfolio_id: uuid.UUID,
+    service: PortfolioService = Depends(),
+) -> PortfolioRead:
+    """
+    이메일과 포트폴리오 ID로 특정 포트폴리오를 조회합니다. (공개)
+    """
+    return await service.get_portfolio_by_email_and_id(
+        email=email, portfolio_id=portfolio_id
+    )
+
+
 @router.post("/text", response_model=PortfolioRead)
 async def create_portfolio_from_text(
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
     *,
     portfolio_in: PortfolioCreateFromText,
-) -> Any:
+) -> PortfolioRead:
     """
     텍스트 입력을 통해 새로운 포트폴리오를 생성하고 즉시 확정합니다.
     """
@@ -62,7 +75,7 @@ async def create_portfolio_from_pdf(
     service: PortfolioService = Depends(),
     *,
     upload_response: UploadURLResponse,
-) -> Any:
+) -> PortfolioRead:
     """
     업로드된 PDF 파일로부터 PENDING 상태의 포트폴리오를 생성합니다.
 
@@ -81,7 +94,7 @@ async def confirm_portfolio(
     service: PortfolioService = Depends(),
     *,
     portfolio_id: uuid.UUID,
-) -> Any:
+) -> PortfolioRead:
     """
     PENDING 상태의 포트폴리오를 CONFIRMED 상태로 확정합니다.
     이 과정에서 각 항목의 임베딩이 생성 및 저장됩니다.
@@ -93,30 +106,29 @@ async def confirm_portfolio(
 
 
 @router.get("/", response_model=List[PortfolioRead])
-async def read_portfolios(
+async def get_portfolios_by_user(
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
-) -> Any:
+) -> List[PortfolioRead]:
     """
     현재 사용자의 모든 포트폴리오 목록을 조회합니다.
     """
-    return await service.get_user_portfolios(current_user=current_user)
+    return await service.get_portfolios_by_user(current_user=current_user)
 
 
-@router.put("/items", response_model=PortfolioRead)
-async def update_portfolio_items(
+@router.get("/{portfolio_id}", response_model=PortfolioRead)
+async def get_portfolio_by_id(
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
     *,
-    items_in: PortfolioItemsUpdate,
-) -> Any:
+    portfolio_id: uuid.UUID,
+) -> PortfolioRead:
     """
-    포트폴리오의 여러 항목을 업데이트합니다.
+    ID로 특정 포트폴리오를 조회합니다.
     """
-    updated_portfolio = await service.update_portfolio_items(
-        items_in=items_in, current_user=current_user
+    return await service.get_portfolio_by_id(
+        portfolio_id=portfolio_id, current_user=current_user
     )
-    return updated_portfolio
 
 
 @router.delete("/{portfolio_id}")
@@ -132,16 +144,13 @@ async def delete_portfolio(
     return await service.delete_portfolio(portfolio_id=portfolio_id, current_user=current_user)
 
 
-@router.delete("/items")
-async def delete_portfolio_items(
+
+@router.put("/{portfolio_id}", response_model=PortfolioRead)
+async def update_portfolio(
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
     *,
-    portfolio_delete: PortfolioDelete,
-):
-    """
-    ID로 특정 포트폴리오 item 삭제합니다.
-    """
-    return await service.delete_portfolio_items(
-        portfolio_item_ids=portfolio_delete.portfolio_item_ids, current_user=current_user
-    )
+    portfolio_id: uuid.UUID,
+    portfolio_update: PortfolioUpdate
+) -> PortfolioRead:
+    return await service.update_portfolio(current_user=current_user, portfolio_id=portfolio_id, portfolio_update=portfolio_update)

@@ -13,7 +13,7 @@ from app.crud.portfolio_crud import PortfolioCRUD
 from app.crud.qna_crud import QnACRUD
 from app.crud.user_crud import UserCRUD
 from app.schemas.llm_schema import LLMChatAnswer
-from app.schemas.portfolio_schema import PortfolioItemLLMInput
+from app.schemas.portfolio_item_schema import PortfolioItemLLMInput
 from app.schemas.qna_schema import QnALLMInput
 from app.services.llm_service import LLMService
 from app.services.rag_service import RAGService

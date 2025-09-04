@@ -1,7 +1,7 @@
 import uuid
 from enum import Enum
 from datetime import datetime
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import String, DateTime, ForeignKey, Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import UUID
@@ -33,6 +33,7 @@ class Portfolio(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     status: Mapped[PortfolioStatus] = mapped_column(
         SQLAlchemyEnum(PortfolioStatus), nullable=False, default=PortfolioStatus.PENDING
