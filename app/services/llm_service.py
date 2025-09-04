@@ -58,9 +58,7 @@ class LLMService:
             convert_system_message_to_human=True,
         )
 
-    async def structure_portfolio_from_text(
-        self, *, text: str
-    ) -> LLMPortfolio:
+    async def structure_portfolio_from_text(self, *, text: str) -> LLMPortfolio:
         portfolio_parser = PydanticOutputParser(pydantic_object=LLMPortfolio)
 
         fix_parser = OutputFixingParser.from_llm(
@@ -75,15 +73,13 @@ class LLMService:
         )
 
         prompt = prompt.partial(
-            format_instructions=portfolio_parser.get_format_instructions(),
-            text=text
+            format_instructions=portfolio_parser.get_format_instructions(), text=text
         )
 
         chain = prompt | self.pdf_parsing_model | fix_parser
 
         parsed_portfolio = await chain.ainvoke({})
         return parsed_portfolio
-
 
     async def generate_qna_for_portfolio_item(
         self, *, item: PortfolioItem
@@ -113,9 +109,7 @@ class LLMService:
         parsed_qna = await chain.ainvoke({})
         return parsed_qna
 
-    async def generate_queries(
-        self, *, context: str, user_input: str
-    ) -> List[str]:
+    async def generate_queries(self, *, context: str, user_input: str) -> List[str]:
         parser = PydanticOutputParser(pydantic_object=LLMSplitQueries)
 
         fix_parser = OutputFixingParser.from_llm(
@@ -132,7 +126,7 @@ class LLMService:
         prompt = prompt.partial(
             format_instructions=parser.get_format_instructions(),
             conversation_history=json.dumps(context, ensure_ascii=False),
-            user_input=user_input
+            user_input=user_input,
         )
 
         chain = prompt | self.query_generation_model | fix_parser
@@ -145,9 +139,7 @@ class LLMService:
     ) -> LLMChatAnswer:
         parser = PydanticOutputParser(pydantic_object=LLMChatAnswer)
 
-        fix_parser = OutputFixingParser.from_llm(
-            parser=parser, llm=self.chat_model
-        )
+        fix_parser = OutputFixingParser.from_llm(parser=parser, llm=self.chat_model)
 
         prompt = ChatPromptTemplate.from_messages(
             [
@@ -170,19 +162,19 @@ class LLMService:
 
     async def summarize_conversation(self, *, conversation_history: str) -> str:
         parser = StrOutputParser()
-        
+
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", SUMMARIZE_CONVERSATION_SYSTEM_PROMPT),
                 ("user", SUMMARIZE_CONVERSATION_USER_PROMPT),
             ]
         )
-        
+
         prompt = prompt.partial(
             conversation_history=conversation_history,
         )
-        
+
         chain = prompt | self.summarize_model | parser
-        
+
         response = await chain.ainvoke({})
         return response

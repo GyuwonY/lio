@@ -18,13 +18,6 @@ async def run_chat(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Session ID not found in cookies",
         )
-        
-    answer = await chat_service.run_chat(
-        chat_create=chat_create, session_id=session_id
-    )
-    return ChatMessageResponse(
-        answer=answer,
-        session_id=session_id
-    )
 
-
+    answer = await chat_service.run_chat(chat_create=chat_create, session_id=session_id)
+    return ChatMessageResponse(answer=answer, session_id=session_id)

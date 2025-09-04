@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import List, Optional, TYPE_CHECKING
 
-from sqlalchemy import Integer, String, DateTime
+from sqlalchemy import String, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -26,22 +26,13 @@ class User(Base):
         String(255), unique=True, index=True, nullable=False
     )
 
-        
-    first_name: Mapped[Optional[str]] = mapped_column(
-        String(255), nullable=True
-    )
-    
-    last_name: Mapped[Optional[str]] = mapped_column(
-        String(255), nullable=True
-    )
-    
-    picture:Mapped[Optional[str]] = mapped_column(
-        String(2048), nullable=True
-    )
-        
-    locale: Mapped[Optional[str]] = mapped_column(
-        String(10), nullable=True
-    )
+    first_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
+    last_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
+    picture: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
+
+    locale: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

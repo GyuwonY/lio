@@ -18,6 +18,7 @@ class PortfolioItemBase(BaseModel):
 class PortfolioItemCreate(PortfolioItemBase):
     pass
 
+
 class PortfolioItemsCreate(BaseModel):
     portfolio_id: uuid.UUID
     portfolio_items: List[PortfolioItemCreate]

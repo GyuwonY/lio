@@ -2,7 +2,11 @@ from fastapi import APIRouter, Depends, Body
 from app.schemas.token_schema import Token
 from app.models.user import User
 from app.schemas.user_schema import UserRead
-from app.services.auth_service import AuthService, get_current_user, get_current_user_from_refresh_token
+from app.services.auth_service import (
+    AuthService,
+    get_current_user,
+    get_current_user_from_refresh_token,
+)
 
 router = APIRouter()
 
@@ -39,5 +43,5 @@ async def get_user_from_token(
         last_name=current_user.last_name,
         picture=current_user.picture,
         locale=current_user.locale,
-        created_at=current_user.created_at
+        created_at=current_user.created_at,
     )

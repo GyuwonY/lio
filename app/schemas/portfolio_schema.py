@@ -1,9 +1,10 @@
 import uuid
 from pydantic import BaseModel
-from datetime import date, datetime
+from datetime import datetime
 from typing import List, Optional
 from app.models.portfolio import PortfolioStatus
 from app.schemas.portfolio_item_schema import PortfolioItemCreate, PortfolioItemRead
+
 
 class PortfolioBase(BaseModel):
     pass
@@ -11,6 +12,7 @@ class PortfolioBase(BaseModel):
 
 class PortfolioCreateFromText(PortfolioBase):
     """텍스트 입력을 통한 포트폴리오 생성을 위한 요청 스키마"""
+
     name: Optional[str]
     text_items: List[PortfolioItemCreate]
 
@@ -36,6 +38,7 @@ class PortfolioRead(PortfolioBase):
 
 class PortfolioUpdate(PortfolioBase):
     name: Optional[str] = None
+
 
 class PortfolioConfirm(BaseModel):
     portfolio_id: uuid.UUID

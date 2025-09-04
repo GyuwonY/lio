@@ -16,6 +16,7 @@ AsyncSessionLocal = async_sessionmaker(
 )
 Base = declarative_base()
 
+
 async def get_db():
     async with AsyncSessionLocal() as session:
         try:
@@ -25,8 +26,10 @@ async def get_db():
             await session.rollback()
             raise e
 
+
 async def get_redis_client(request: Request):
     return request.app.state.redis
+
 
 async def get_embeddings_model() -> GoogleGenerativeAIEmbeddings:
     return GoogleGenerativeAIEmbeddings(

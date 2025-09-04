@@ -26,7 +26,6 @@ class RAGService:
         self.storage_service = storage_service
         self.embeddings_model = embeddings_model
 
-
     async def extract_text_from_gcs_pdf(self, gcs_url: str) -> str:
         file_bytes = await self.storage_service.download_as_bytes(gcs_url)
 
@@ -43,7 +42,6 @@ class RAGService:
         finally:
             if tmp_path and os.path.exists(tmp_path):
                 os.remove(tmp_path)
-
 
     async def embed_portfolio_items(
         self, items: List[PortfolioItem]
@@ -64,11 +62,8 @@ class RAGService:
         return await self.embeddings_model.aembed_documents(
             texts=texts_to_embed, output_dimensionality=768
         )
-        
-        
-    async def embed_qnas(
-        self, qnas: List[QnA]
-    ) -> List[List[float]]:
+
+    async def embed_qnas(self, qnas: List[QnA]) -> List[List[float]]:
         texts_to_embed = []
         for qna in qnas:
             full_text = f"question: {qna.question}\n answer: {qna.answer}"
@@ -79,8 +74,7 @@ class RAGService:
             texts=texts_to_embed, output_dimensionality=768
         )
 
-    
-    async def embed_queries(
-        self, *, queries: List[str]
-    ) -> List[List[float]]:
-        return await self.embeddings_model.aembed_documents(texts=queries, output_dimensionality=768)
+    async def embed_queries(self, *, queries: List[str]) -> List[List[float]]:
+        return await self.embeddings_model.aembed_documents(
+            texts=queries, output_dimensionality=768
+        )

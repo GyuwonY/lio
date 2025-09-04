@@ -8,7 +8,6 @@ class ChatMessageCreate(BaseModel):
     question: str
     email: str
     portfolio_id: uuid.UUID
-    
 
 
 class ChatMessage(BaseModel):

@@ -1,10 +1,8 @@
-from typing import Any, List
+from typing import List
 import uuid
 from fastapi import APIRouter, Depends
 
-from app.schemas.portfolio_schema import PortfolioRead
 from app.schemas.portfolio_item_schema import (
-    PortfolioItemCreate,
     PortfolioItemRead,
     PortfolioItemsCreate,
     PortfolioItemsUpdate,
@@ -22,9 +20,11 @@ async def create_portfolio_items(
     current_user: User = Depends(get_current_user),
     service: PortfolioItemService = Depends(),
     *,
-    portfolio_items_create: PortfolioItemsCreate
+    portfolio_items_create: PortfolioItemsCreate,
 ) -> List[PortfolioItemRead]:
-    return await service.create_portfolio_items(portfolio_items_create=portfolio_items_create, current_user=current_user)
+    return await service.create_portfolio_items(
+        portfolio_items_create=portfolio_items_create, current_user=current_user
+    )
 
 
 @router.get("/by-portfolio/{portfolio_id}", response_model=List[PortfolioItemRead])
@@ -68,5 +68,6 @@ async def delete_portfolio_items(
     ID로 특정 포트폴리오 item 삭제합니다.
     """
     return await service.delete_portfolio_items(
-        portfolio_item_ids=portfolio_delete.portfolio_item_ids, current_user=current_user
+        portfolio_item_ids=portfolio_delete.portfolio_item_ids,
+        current_user=current_user,
     )

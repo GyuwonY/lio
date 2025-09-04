@@ -25,15 +25,18 @@ class QnARead(QnABase):
 class QnACreate(QnABase):
     portfolio_item_id: uuid.UUID
 
+
 class QnAsUpdate(BaseModel):
     qnas: List[QnAUpdate]
+
 
 class QnAsDelete(BaseModel):
     qna_ids: List[uuid.UUID]
 
+
 class QnAsConfirm(BaseModel):
     qna_ids: List[uuid.UUID]
 
+
 class QnALLMInput(BaseModel):
     answer: str
-    

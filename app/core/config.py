@@ -36,14 +36,20 @@ class Settings(BaseSettings):
 
     # Model
     EMBEDDING_MODEL: str = Field("gemini-embedding-001", env="EMBEDDING_MODEL")
-    PDF_PARSING_LLM_MODEL: str = Field("gemini-2.5-flash-lite", env="PDF_PARSING_LLM_MODEL")
-    GENERATE_QNA_LLM_MODEL: str = Field("gemini-2.5-flash", env="GENERATE_QNA_LLM_MODEL")
-    QUERY_GENERATION_LLM_MODEL: str = Field("gemini-2.5-flash-lite", env="GENERATE_QNA_LLM_MODEL")
+    PDF_PARSING_LLM_MODEL: str = Field(
+        "gemini-2.5-flash-lite", env="PDF_PARSING_LLM_MODEL"
+    )
+    GENERATE_QNA_LLM_MODEL: str = Field(
+        "gemini-2.5-flash", env="GENERATE_QNA_LLM_MODEL"
+    )
+    QUERY_GENERATION_LLM_MODEL: str = Field(
+        "gemini-2.5-flash-lite", env="GENERATE_QNA_LLM_MODEL"
+    )
     CHAT_LLM_MODEL: str = Field("gemini-2.5-flash-lite", env="CHAT_LLM_MODEL")
-    
-    LANGCHAIN_TRACING_V2: str = Field(...,env="LANGCHAIN_TRACING_V2")
-    LANGCHAIN_API_KEY: str = Field(...,env="LANGCHAIN_API_KEY")
-    LANGCHAIN_PROJECT: str = Field(...,env="LANGCHAIN_PROJECT")
+
+    LANGCHAIN_TRACING_V2: str = Field(..., env="LANGCHAIN_TRACING_V2")
+    LANGCHAIN_API_KEY: str = Field(..., env="LANGCHAIN_API_KEY")
+    LANGCHAIN_PROJECT: str = Field(..., env="LANGCHAIN_PROJECT")
 
     class Config:
         env_file = ".env"

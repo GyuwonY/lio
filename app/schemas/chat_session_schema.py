@@ -18,10 +18,12 @@ class ConversationTurn(BaseModel):
 
 class ChatContext(BaseModel):
     context: List[ConversationTurn] = Field(default_factory=list)
-    
+
+
 class ChatSessionInfo(BaseModel):
     chat_session_id: str
     context: List[ConversationTurn] = Field(default_factory=list)
+
 
 class ChatSession(BaseModel):
     id: uuid.UUID

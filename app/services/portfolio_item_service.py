@@ -24,8 +24,7 @@ class PortfolioItemService:
         self.portfolio_crud = portfolio_crud
         self.crud = crud
         self.rag_service = rag_service
-        
-        
+
     async def create_portfolio_items(
         self, *, portfolio_items_create: PortfolioItemsCreate, current_user: User
     ) -> List[PortfolioItemRead]:
@@ -40,9 +39,7 @@ class PortfolioItemService:
         created_items = await self.crud.create_portfolio_items(
             portfolio_items_create=portfolio_items_create
         )
-        return [
-            PortfolioItemRead.model_validate(item) for item in created_items
-        ]
+        return [PortfolioItemRead.model_validate(item) for item in created_items]
 
     async def get_portfolio_items_by_portfolio_id(
         self, *, portfolio_id: uuid.UUID, current_user: User
@@ -95,17 +92,20 @@ class PortfolioItemService:
             item.type = item_update.type
             item.tech_stack = item_update.tech_stack
 
-        return [PortfolioItemRead(
-            type=portfolio_item.type,
-            topic=portfolio_item.topic,
-            start_date=portfolio_item.start_date,
-            end_date=portfolio_item.end_date,
-            content=portfolio_item.content,
-            tech_stack=portfolio_item.tech_stack,
-            id=portfolio_item.id,
-            portfolio_id=portfolio_item.portfolio_id,
-            created_at=portfolio_item.created_at,
-        ) for portfolio_item in portfolio_items]
+        return [
+            PortfolioItemRead(
+                type=portfolio_item.type,
+                topic=portfolio_item.topic,
+                start_date=portfolio_item.start_date,
+                end_date=portfolio_item.end_date,
+                content=portfolio_item.content,
+                tech_stack=portfolio_item.tech_stack,
+                id=portfolio_item.id,
+                portfolio_id=portfolio_item.portfolio_id,
+                created_at=portfolio_item.created_at,
+            )
+            for portfolio_item in portfolio_items
+        ]
 
     async def delete_portfolio_items(
         self, *, portfolio_item_ids: List[uuid.UUID], current_user: User

@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List
 import uuid
 from fastapi import Depends
 from sqlalchemy import insert
@@ -28,14 +28,11 @@ class PortfolioItemCRUD:
             item_data["portfolio_id"] = portfolio_items_create.portfolio_id
 
         stmt = (
-            insert(PortfolioItem)
-            .values(portfolio_items_data)
-            .returning(PortfolioItem)
+            insert(PortfolioItem).values(portfolio_items_data).returning(PortfolioItem)
         )
         result = await self.db.execute(stmt)
         created_items = result.scalars().all()
         return list(created_items)
-    
 
     async def get_portfolio_item_by_ids(
         self, *, portfolio_item_ids: List[uuid.UUID]
@@ -60,7 +57,9 @@ class PortfolioItemCRUD:
         )
         return list(result.scalars().all())
 
-    async def delete_portfolio_items(self, *, portfolio_item_ids: List[uuid.UUID]) -> bool:
+    async def delete_portfolio_items(
+        self, *, portfolio_item_ids: List[uuid.UUID]
+    ) -> bool:
         db_portfolio_items = await self.get_portfolio_item_by_ids(
             portfolio_item_ids=portfolio_item_ids
         )

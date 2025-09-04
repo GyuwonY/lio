@@ -1,5 +1,5 @@
 import uuid
-from typing import List, Any
+from typing import List
 from fastapi import APIRouter, Depends, Body, HTTPException, status
 
 from app.schemas.portfolio_schema import (
@@ -141,8 +141,9 @@ async def delete_portfolio(
     """
     ID로 특정 포트폴리오를 삭제합니다.
     """
-    return await service.delete_portfolio(portfolio_id=portfolio_id, current_user=current_user)
-
+    return await service.delete_portfolio(
+        portfolio_id=portfolio_id, current_user=current_user
+    )
 
 
 @router.put("/{portfolio_id}", response_model=PortfolioRead)
@@ -151,6 +152,10 @@ async def update_portfolio(
     service: PortfolioService = Depends(),
     *,
     portfolio_id: uuid.UUID,
-    portfolio_update: PortfolioUpdate
+    portfolio_update: PortfolioUpdate,
 ) -> PortfolioRead:
-    return await service.update_portfolio(current_user=current_user, portfolio_id=portfolio_id, portfolio_update=portfolio_update)
+    return await service.update_portfolio(
+        current_user=current_user,
+        portfolio_id=portfolio_id,
+        portfolio_update=portfolio_update,
+    )

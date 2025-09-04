@@ -1,4 +1,3 @@
-import logging
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import redis.asyncio as redis
@@ -14,26 +13,25 @@ from fastapi.middleware.cors import CORSMiddleware
 # logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     # Create DB tables
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     # Create Redis connection pool and client
     redis_pool = redis.ConnectionPool(
         host=settings.REDIS_URL,
         port=6379,
         password=settings.REDIS_PASSWORD,
         encoding="utf-8",
-        decode_responses=True
+        decode_responses=True,
     )
     app.state.redis = redis.Redis(connection_pool=redis_pool)
-    
+
     yield
-    
+
     # Shutdown
     await app.state.redis.close()
     await async_engine.dispose()
@@ -64,10 +62,10 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 
 if __name__ == "__main__":
     uvicorn.run(
-        "app.main:app", 
-        host="0.0.0.0", 
-        port=8000, 
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
         reload=True,
         proxy_headers=True,
-        forwarded_allow_ips='*'
+        forwarded_allow_ips="*",
     )

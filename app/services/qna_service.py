@@ -5,7 +5,6 @@ from fastapi import Depends, HTTPException, status
 
 from app.crud.portfolio_item_crud import PortfolioItemCRUD
 from app.crud.qna_crud import QnACRUD
-from app.crud.portfolio_crud import PortfolioCRUD
 from app.models.qna import QnA, QnAStatus
 from app.schemas.qna_schema import (
     QnARead,
@@ -31,10 +30,7 @@ class QnAService:
         self.llm_service = llm_service
         self.rag_service = rag_service
 
-
-    async def _generate_qna_for_item(
-        self, *, item: PortfolioItem
-    ) -> List[QnACreate]:
+    async def _generate_qna_for_item(self, *, item: PortfolioItem) -> List[QnACreate]:
         try:
             parsed_output = await self.llm_service.generate_qna_for_portfolio_item(
                 item=item
@@ -52,34 +48,36 @@ class QnAService:
             print(f"Error generating QnA for portfolio_item_id {item.id}: {e}")
             return []
 
-    async def generate_qna_for_all_portfolios_background(self, *, current_user: User, portfolio_id: uuid.UUID, portfolio_item_type: PortfolioItemType) -> List[QnA]:
+    async def generate_qna_for_all_portfolios_background(
+        self,
+        *,
+        current_user: User,
+        portfolio_id: uuid.UUID,
+        portfolio_item_type: PortfolioItemType,
+    ) -> List[QnA]:
         portfolio_items = await self.portfolio_item_crud.get_confirmed_portfolio_items_by_portfolio_id(
             portfolio_id=portfolio_id, portfolio_item_type=portfolio_item_type
         )
-        
+
         if not portfolio_items:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="존재하지 않는 항목 타입",
             )
 
-        tasks = [
-            self._generate_qna_for_item(item=item)
-            for item in portfolio_items
-        ]
+        tasks = [self._generate_qna_for_item(item=item) for item in portfolio_items]
         results = await asyncio.gather(*tasks)
-        
+
         qnas_to_create = []
         for result in results:
             qnas_to_create.extend(result)
-        
+
         if qnas_to_create:
             return await self.qna_crud.bulk_create_qnas(
                 qna_list=qnas_to_create, user_id=current_user.id
             )
-            
-        return []
 
+        return []
 
     # async def add_qna_generation_task(
     #     self, *, background_tasks: BackgroundTasks, current_user: User, portfolio_id: uuid.UUID, portfolio_item_type: PortfolioItemType
@@ -89,11 +87,12 @@ class QnAService:
     #     )
     #     return {"message": "Q&A generation has been started in the background."}
 
-
     async def get_qnas_by_portfolio(
         self, *, portfolio_id: uuid.UUID, current_user: User
     ) -> List[QnARead]:
-        qnas = await self.qna_crud.get_qnas_by_portfolio_id(portfolio_id=portfolio_id, user_id=current_user.id)
+        qnas = await self.qna_crud.get_qnas_by_portfolio_id(
+            portfolio_id=portfolio_id, user_id=current_user.id
+        )
 
         return [
             QnARead(
@@ -105,27 +104,25 @@ class QnAService:
             )
             for qna in qnas
         ]
-        
-        
+
     async def update_qnas(
         self, *, qnas_in: QnAsUpdate, current_user: User
     ) -> List[QnARead]:
-        
-        qnas = await self.qna_crud.get_qnas_by_ids(ids=[qna.id for qna in qnas_in.qnas], user_id=current_user.id)
-        update_qna_dict = {qna.id:qna for qna in qnas_in.qnas}
-        
+        qnas = await self.qna_crud.get_qnas_by_ids(
+            ids=[qna.id for qna in qnas_in.qnas], user_id=current_user.id
+        )
+        update_qna_dict = {qna.id: qna for qna in qnas_in.qnas}
+
         qnas_to_re_embed = []
         for qna in qnas:
-            if (
-                qna.status == QnAStatus.CONFIRMED
-                and (qna.question != update_qna_dict[qna.id].question or qna.answer != update_qna_dict[qna.id].answer)
+            if qna.status == QnAStatus.CONFIRMED and (
+                qna.question != update_qna_dict[qna.id].question
+                or qna.answer != update_qna_dict[qna.id].answer
             ):
                 qnas_to_re_embed.append(qna)
 
         if qnas_to_re_embed:
-            embeddings = await self.rag_service.embed_qnas(
-                qnas=qnas_to_re_embed
-            )
+            embeddings = await self.rag_service.embed_qnas(qnas=qnas_to_re_embed)
             embedding_map = {
                 qna.id: emb for qna, emb in zip(qnas_to_re_embed, embeddings)
             }
@@ -139,28 +136,31 @@ class QnAService:
 
             qna.question = qna_update.question
             qna.answer = qna_update.answer
-        
-        return [QnARead(
+
+        return [
+            QnARead(
                 id=qna.id,
                 status=qna.status,
                 portfolio_item_id=qna.portfolio_item_id,
                 question=qna.question,
                 answer=qna.answer,
-            ) for qna in qnas]
+            )
+            for qna in qnas
+        ]
 
-    
     async def delete_qnas(self, *, qna_ids: List[uuid.UUID], current_user: User):
         qnas = await self.qna_crud.get_qnas_by_ids(ids=qna_ids, user_id=current_user.id)
         for qna in qnas:
             qna.status = QnAStatus.DELETED
-            
-    
-    async def confirm_qnas(self, *, qna_ids: List[uuid.UUID], current_user: User) -> List[QnA]:
+
+    async def confirm_qnas(
+        self, *, qna_ids: List[uuid.UUID], current_user: User
+    ) -> List[QnA]:
         qnas = await self.qna_crud.get_qnas_by_ids(ids=qna_ids, user_id=current_user.id)
         embeddings = await self.rag_service.embed_qnas(qnas)
-        
+
         for qna, embedding in zip(qnas, embeddings):
             qna.embedding = embedding
             qna.status = QnAStatus.CONFIRMED
-            
+
         return qnas

@@ -22,7 +22,9 @@ class ChatSessionCRUD:
         await self.db.refresh(db_obj)
         return db_obj
 
-    async def get_chat_session_by_session_id(self, *, session_id: str) -> ChatSession | None:
+    async def get_chat_session_by_session_id(
+        self, *, session_id: str
+    ) -> ChatSession | None:
         result = await self.db.execute(
             select(ChatSession).where(ChatSession.session_id == session_id)
         )

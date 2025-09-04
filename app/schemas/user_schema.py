@@ -20,11 +20,10 @@ class UserRead(UserBase):
     id: uuid.UUID
     created_at: datetime
 
+
 class UserResponse(UserBase):
     id: uuid.UUID
     created_at: datetime
-
-
 
 
 class Token(BaseModel):

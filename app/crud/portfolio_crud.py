@@ -9,44 +9,47 @@ from pgvector.sqlalchemy import Vector
 
 from app.db.session import get_db
 from app.models.portfolio import Portfolio, PortfolioSourceType, PortfolioStatus
-from app.models.portfolio_item import PortfolioItem, PortfolioItemStatus, PortfolioItemType
+from app.models.portfolio_item import (
+    PortfolioItem,
+    PortfolioItemStatus,
+    PortfolioItemType,
+)
 
 
 class PortfolioCRUD:
     def __init__(self, db: AsyncSession = Depends(get_db)):
         self.db = db
 
-
     async def get_portfolios_by_user(self, *, user_id: uuid.UUID) -> List[Portfolio]:
         result = await self.db.execute(
-            select(Portfolio)
-            .where(
+            select(Portfolio).where(
                 Portfolio.user_id == user_id,
                 Portfolio.status != PortfolioStatus.DELETED,
             )
         )
         return list(result.scalars().unique().all())
 
-
-    async def get_portfolio_by_id_without_item(self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID) -> Portfolio | None:
+    async def get_portfolio_by_id_without_item(
+        self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
+    ) -> Portfolio | None:
         result = await self.db.execute(
-            select(Portfolio)
-            .where(
-                Portfolio.id == portfolio_id,
-                Portfolio.user_id == user_id
+            select(Portfolio).where(
+                Portfolio.id == portfolio_id, Portfolio.user_id == user_id
             )
         )
         return result.scalars().first()
-    
-    
+
     async def get_confirmed_portfolio_by_id(
         self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
     ) -> Portfolio | None:
-
         result = await self.db.execute(
             select(Portfolio)
             .options(
-                selectinload(Portfolio.items.and_(PortfolioItem.status == PortfolioItemStatus.CONFIRMED))
+                selectinload(
+                    Portfolio.items.and_(
+                        PortfolioItem.status == PortfolioItemStatus.CONFIRMED
+                    )
+                )
             )
             .where(
                 Portfolio.id == portfolio_id,
@@ -55,7 +58,6 @@ class PortfolioCRUD:
             )
         )
         return result.scalars().first()
-    
 
     async def get_portfolio_by_id(
         self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
@@ -63,7 +65,11 @@ class PortfolioCRUD:
         result = await self.db.execute(
             select(Portfolio)
             .options(
-                selectinload(Portfolio.items.and_(PortfolioItem.status != PortfolioItemStatus.DELETED))
+                selectinload(
+                    Portfolio.items.and_(
+                        PortfolioItem.status != PortfolioItemStatus.DELETED
+                    )
+                )
             )
             .where(
                 Portfolio.id == portfolio_id,
@@ -73,30 +79,28 @@ class PortfolioCRUD:
         )
         return result.scalars().first()
 
-
     async def get_portfolio_item_by_ids(
         self, *, portfolio_item_ids: List[uuid.UUID]
     ) -> List[PortfolioItem]:
         result = await self.db.execute(
             select(PortfolioItem).where(
-                PortfolioItem.id.in_(portfolio_item_ids), 
-                PortfolioItem.status != PortfolioItemStatus.DELETED
+                PortfolioItem.id.in_(portfolio_item_ids),
+                PortfolioItem.status != PortfolioItemStatus.DELETED,
             )
         )
         return list(result.scalars().all())
-    
+
     async def get_confirmed_portfolio_items_by_portfolio_id(
         self, *, portfolio_id: uuid.UUID, portfolio_item_type: PortfolioItemType
     ) -> List[PortfolioItem]:
         result = await self.db.execute(
             select(PortfolioItem).where(
-                PortfolioItem.portfolio_id == portfolio_id, 
+                PortfolioItem.portfolio_id == portfolio_id,
                 PortfolioItem.status == PortfolioItemStatus.CONFIRMED,
-                PortfolioItem.type == portfolio_item_type
+                PortfolioItem.type == portfolio_item_type,
             )
         )
         return list(result.scalars().all())
-
 
     async def create_portfolio(
         self,
@@ -124,8 +128,9 @@ class PortfolioCRUD:
         )
         return refreshed_portfolio
 
-
-    async def delete_portfolio(self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+    async def delete_portfolio(
+        self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
+    ) -> bool:
         db_portfolio = await self.get_portfolio_by_id(
             portfolio_id=portfolio_id, user_id=user_id
         )
@@ -140,8 +145,9 @@ class PortfolioCRUD:
         await self.db.flush()
         return True
 
-
-    async def delete_portfolio_items(self, *, portfolio_item_ids: List[uuid.UUID]) -> bool:
+    async def delete_portfolio_items(
+        self, *, portfolio_item_ids: List[uuid.UUID]
+    ) -> bool:
         db_portfolio_items = await self.get_portfolio_item_by_ids(
             portfolio_item_ids=portfolio_item_ids
         )
@@ -153,17 +159,20 @@ class PortfolioCRUD:
 
         await self.db.flush()
         return True
-    
-    async def search_portfolio_items_by_embedding(self, *, embeddings: List[List[float]], portfolio_id: uuid.UUID) -> List[PortfolioItem]:
-        queries_cte = values(
-            literal_column("embedding", Vector),
-            name="queries"
-        ).data([(e,) for e in embeddings]).cte()
-        
+
+    async def search_portfolio_items_by_embedding(
+        self, *, embeddings: List[List[float]], portfolio_id: uuid.UUID
+    ) -> List[PortfolioItem]:
+        queries_cte = (
+            values(literal_column("embedding", Vector), name="queries")
+            .data([(e,) for e in embeddings])
+            .cte()
+        )
+
         items_alias = aliased(PortfolioItem)
         lateral_sq = (
             select(items_alias)
-            .where(items_alias.portfolio_id == portfolio_id) 
+            .where(items_alias.portfolio_id == portfolio_id)
             .order_by(items_alias.embedding.l2_distance(queries_cte.c.embedding))
             .limit(3)
             .lateral("portfolio_items")

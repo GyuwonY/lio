@@ -170,7 +170,7 @@ VECTOR_QUERY_GENERATOR_SYSTEM_PROMPT = """
 {format_instructions}
 """
 
-VECTOR_QUERY_GENERATOR_USER_PROMPT="""
+VECTOR_QUERY_GENERATOR_USER_PROMPT = """
 주어진 정보는 다음과 같습니다.
 * `대화 기록`: {{conversation_history}}
 * `사용자 입력`: {{user_input}}

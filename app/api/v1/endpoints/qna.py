@@ -42,13 +42,17 @@ async def generate_qna_sync(
     service: QnAService = Depends(),
     *,
     portfolio_id: uuid.UUID,
-    portfolio_item_type: PortfolioItemType
+    portfolio_item_type: PortfolioItemType,
 ):
     """
     사용자의 모든 포트폴리오 항목에 대한 Q&A 생성을 동기적으로 수행합니다.
     API는 모든 생성이 완료될 때까지 기다린 후 응답을 반환합니다.
     """
-    return await service.generate_qna_for_all_portfolios_background(current_user=current_user, portfolio_id=portfolio_id, portfolio_item_type=portfolio_item_type)
+    return await service.generate_qna_for_all_portfolios_background(
+        current_user=current_user,
+        portfolio_id=portfolio_id,
+        portfolio_item_type=portfolio_item_type,
+    )
 
 
 @router.get("/{portfolio_id}", response_model=List[QnARead], summary="내 Q&A 목록 조회")
@@ -61,8 +65,8 @@ async def get_qnas_by_portfolio(
     return await service.get_qnas_by_portfolio(
         current_user=current_user, portfolio_id=portfolio_id
     )
-    
-    
+
+
 @router.put("/confirm", response_model=List[QnARead], summary="Q&A 확정")
 async def confirm_qnas(
     current_user: User = Depends(get_current_user),
@@ -70,7 +74,9 @@ async def confirm_qnas(
     *,
     qnas_confirm: QnAsConfirm,
 ):
-    return await service.confirm_qnas(qna_ids=qnas_confirm.qna_ids, current_user=current_user)
+    return await service.confirm_qnas(
+        qna_ids=qnas_confirm.qna_ids, current_user=current_user
+    )
 
 
 @router.put("/bulk", response_model=List[QnARead], summary="Q&A 벌크 수정")
@@ -90,5 +96,6 @@ async def delete_qnas(
     *,
     qnas_delete: QnAsDelete,
 ):
-    return await service.delete_qnas(qna_ids=qnas_delete.qna_ids, current_user=current_user)
-
+    return await service.delete_qnas(
+        qna_ids=qnas_delete.qna_ids, current_user=current_user
+    )
