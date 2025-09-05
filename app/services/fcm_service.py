@@ -2,7 +2,6 @@ import firebase_admin
 from firebase_admin import credentials, messaging
 from app.core.config import settings
 import json
-import base64
 
 class FCMService:
     def __init__(self):
@@ -10,10 +9,7 @@ class FCMService:
             if settings.APP_ENV == "local":
                 cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS)
             else:
-                decoded_creds = base64.b64decode(settings.FIREBASE_CREDENTIALS).decode(
-                    "utf-8"
-                )
-                cred_json = json.loads(decoded_creds)
+                cred_json = json.loads(settings.FIREBASE_CREDENTIALS)
                 cred = credentials.Certificate(cred_json)
             firebase_admin.initialize_app(cred)
 
