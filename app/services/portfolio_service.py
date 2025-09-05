@@ -1,11 +1,10 @@
 import uuid
 from typing import List
 from fastapi import Depends, HTTPException, status
-
 from app.crud.portfolio_crud import PortfolioCRUD
 from app.crud.user_crud import UserCRUD
+from app.db.session import AsyncSessionLocal
 from app.models.portfolio_item import PortfolioItem, PortfolioItemStatus
-from app.schemas.portfolio_item_schema import PortfolioItemRead
 from app.schemas.portfolio_schema import (
     PortfolioCreateFromText,
     PortfolioCreateWithPdf,
@@ -14,9 +13,10 @@ from app.schemas.portfolio_schema import (
     PortfolioUpdate,
 )
 from app.models.user import User
-from app.models.portfolio import Portfolio, PortfolioSourceType, PortfolioStatus
+from app.models.portfolio import PortfolioSourceType, PortfolioStatus
 from app.services.rag_service import RAGService
 from app.services.llm_service import LLMService
+from app.services.fcm_service import FCMService
 
 
 class PortfolioService:
@@ -26,15 +26,17 @@ class PortfolioService:
         user_crud: UserCRUD = Depends(),
         rag_service: RAGService = Depends(),
         llm_service: LLMService = Depends(),
+        fcm_service: FCMService = Depends(),
     ):
         self.crud = crud
         self.user_crud = user_crud
         self.rag_service = rag_service
         self.llm_service = llm_service
+        self.fcm_service = fcm_service
 
     async def create_portfolio_from_text(
         self, *, portfolio_in: PortfolioCreateFromText, current_user: User
-    ) -> Portfolio:
+    ) -> PortfolioRead:
         if not portfolio_in.text_items:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -65,65 +67,91 @@ class PortfolioService:
             source_url=None,
             status=PortfolioStatus.CONFIRMED,
             items=items,
+            name=portfolio_in.name
         )
 
-        return created_portfolio
+        return PortfolioRead.model_validate(created_portfolio)
 
-    async def create_portfolio_from_pdf(
+    async def create_draft_portfolio(
         self, *, portfolio_in: PortfolioCreateWithPdf, current_user: User
-    ) -> Portfolio:
-        try:
-            text = await self.rag_service.extract_text_from_gcs_pdf(
-                gcs_url=portfolio_in.file_path
-            )
-            if not text.strip():
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="PDF 파일에서 텍스트를 추출할 수 없습니다.",
+    ) -> PortfolioRead:
+        """DRAFT 상태의 포트폴리오를 생성합니다."""
+        draft_portfolio = await self.crud.create_portfolio(
+            user_id=current_user.id,
+            source_type=PortfolioSourceType.PDF,
+            source_url=portfolio_in.file_path,
+            status=PortfolioStatus.DRAFT,
+            items=[],
+            name=portfolio_in.name,
+        )
+        return PortfolioRead.model_validate(draft_portfolio)
+
+    async def create_portfolio_from_pdf_background(
+        self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID, file_path: str
+    ):
+        async with AsyncSessionLocal() as db:
+            portfolio = None
+            user = None
+            try:
+                portfolio_crud = PortfolioCRUD(db)
+                user_crud = UserCRUD(db)
+
+                portfolio = await portfolio_crud.get_portfolio_by_id(
+                    portfolio_id=portfolio_id, user_id=user_id
                 )
+                if not portfolio:
+                    print(f"Error: Portfolio not found for background processing: {portfolio_id}")
+                    return
 
-            structured_items = await self.llm_service.structure_portfolio_from_text(
-                text=text
-            )
+                user = await user_crud.get_user_by_id(user_id=user_id)
 
-            if not structured_items:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="LLM이 텍스트를 구조화하지 못했습니다.",
-                )
+                text = await self.rag_service.extract_text_from_gcs_pdf(gcs_url=file_path)
+                if not text.strip():
+                    raise ValueError("PDF 파일에서 텍스트를 추출할 수 없습니다.")
 
-            items = [
-                PortfolioItem(
-                    type=item.type,
-                    status=PortfolioItemStatus.PENDING,
-                    topic=item.topic,
-                    start_date=item.start_date,
-                    end_date=item.end_date,
-                    content=item.content,
-                    tech_stack=item.tech_stack,
-                )
-                for item in structured_items.items
-            ]
+                structured_items = await self.llm_service.structure_portfolio_from_text(text=text)
+                if not structured_items or not structured_items.items:
+                    raise ValueError("LLM이 텍스트를 구조화하지 못했습니다.")
 
-            created_portfolio = await self.crud.create_portfolio(
-                user_id=current_user.id,
-                source_type=PortfolioSourceType.PDF,
-                source_url=portfolio_in.file_path,
-                status=PortfolioStatus.PENDING,
-                items=items,
-            )
-            return created_portfolio
+                created_items = [
+                    PortfolioItem(
+                        type=item.type,
+                        topic=item.topic,
+                        start_date=item.start_date,
+                        end_date=item.end_date,
+                        content=item.content,
+                        tech_stack=item.tech_stack,
+                        portfolio_id=portfolio_id,
+                        status=PortfolioItemStatus.PENDING,
+                    )
+                    for item in structured_items.items
+                ]
 
-        except FileNotFoundError:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"GCS에서 파일을 찾을 수 없습니다: {portfolio_in.file_path}",
-            )
-        except ValueError as e:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"PDF 처리 또는 LLM 응답 파싱 중 오류 발생: {e}",
-            )
+                portfolio.items.extend(created_items)
+                portfolio.status = PortfolioStatus.PENDING
+
+                if user and user.fcm_token:
+                    self.fcm_service.send_notification(
+                        token=user.fcm_token,
+                        title="create_portfolio_success",
+                        body=f"{portfolio_id}",
+                    )
+
+            except Exception as e:
+                print(f"Error processing portfolio {portfolio_id}: {e}")
+                if portfolio:
+                    portfolio.status = PortfolioStatus.FAILED
+                
+                if user and user.fcm_token:
+                    self.fcm_service.send_notification(
+                        token=user.fcm_token,
+                        title="create_portfolio_fail",
+                        body=f"{portfolio_id}",
+                    )
+            finally:
+                if portfolio:
+                    db.add(portfolio)
+                    await db.commit()
 
     async def confirm_portfolio(
         self, *, confirm_in: PortfolioConfirm, current_user: User
@@ -140,7 +168,7 @@ class PortfolioService:
         if portfolio.status != PortfolioStatus.PENDING:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="이미 확정된 포트폴리오입니다.",
+                detail="이미 확정되었거나 처리 중인 포트폴리오입니다.",
             )
 
         portfolio.status = PortfolioStatus.CONFIRMED
@@ -150,50 +178,17 @@ class PortfolioService:
             item.embedding = embedding
             item.status = PortfolioItemStatus.CONFIRMED
 
-        return PortfolioRead(
-            id=portfolio.id,
-            user_id=portfolio.user_id,
-            status=portfolio.status,
-            name=portfolio.name,
-            source_type=portfolio.source_type.value,
-            source_url=portfolio.source_url,
-            created_at=portfolio.created_at,
-            items=[
-                PortfolioItemRead(
-                    id=portfolio_item.id,
-                    portfolio_id=portfolio_item.portfolio_id,
-                    created_at=portfolio_item.created_at,
-                    type=portfolio_item.type,
-                    topic=portfolio_item.topic,
-                    start_date=portfolio_item.start_date,
-                    end_date=portfolio_item.end_date,
-                    content=portfolio_item.content,
-                    tech_stack=portfolio_item.tech_stack,
-                )
-                for portfolio_item in portfolio.items
-            ],
-        )
+        return PortfolioRead.model_validate(portfolio)
 
     async def get_portfolios_by_user(
         self, *, current_user: User
     ) -> List[PortfolioRead]:
         portfolios = await self.crud.get_portfolios_by_user(user_id=current_user.id)
-        return [
-            PortfolioRead(
-                id=portfolio.id,
-                user_id=portfolio.user_id,
-                status=portfolio.status,
-                name=portfolio.name,
-                source_type=portfolio.source_type.value,
-                source_url=portfolio.source_url,
-                created_at=portfolio.created_at,
-            )
-            for portfolio in portfolios
-        ]
+        return [PortfolioRead.model_validate(p) for p in portfolios]
 
     async def get_portfolio_by_id(
         self, *, portfolio_id: uuid.UUID, current_user: User
-    ) -> Portfolio:
+    ) -> PortfolioRead:
         """ID로 특정 포트폴리오를 조회합니다."""
         portfolio = await self.crud.get_portfolio_by_id(
             portfolio_id=portfolio_id, user_id=current_user.id
@@ -203,11 +198,11 @@ class PortfolioService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="포트폴리오를 찾을 수 없거나 해당 포트폴리오에 접근할 권한이 없습니다.",
             )
-        return portfolio
+        return PortfolioRead.model_validate(portfolio)
 
     async def get_portfolio_by_email_and_id(
         self, *, email: str, portfolio_id: uuid.UUID
-    ) -> Portfolio:
+    ) -> PortfolioRead:
         """이메일과 ID로 특정 포트폴리오를 조회합니다."""
         user = await self.user_crud.get_user_by_email(email=email)
         if not user:
@@ -224,10 +219,11 @@ class PortfolioService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="포트폴리오를 찾을 수 없거나 해당 포트폴리오에 접근할 권한이 없습니다.",
             )
-        return portfolio
+        return PortfolioRead.model_validate(portfolio)
 
-    async def get_user_portfolios(self, *, current_user: User) -> List[Portfolio]:
-        return await self.crud.get_portfolios_by_user(user_id=current_user.id)
+    async def get_user_portfolios(self, *, current_user: User) -> List[PortfolioRead]:
+        portfolios = await self.crud.get_portfolios_by_user(user_id=current_user.id)
+        return [PortfolioRead.model_validate(p) for p in portfolios]
 
     async def delete_portfolio(
         self, *, portfolio_id: uuid.UUID, current_user: User
@@ -261,12 +257,4 @@ class PortfolioService:
             )
 
         portfolio.name = portfolio_update.name
-        return PortfolioRead(
-            id=portfolio.id,
-            user_id=portfolio.user_id,
-            status=portfolio.status,
-            name=portfolio.name,
-            source_type=portfolio.source_type.value,
-            source_url=portfolio.source_url,
-            created_at=portfolio.created_at,
-        )
+        return PortfolioRead.model_validate(portfolio)

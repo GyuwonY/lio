@@ -17,8 +17,10 @@ if TYPE_CHECKING:
 
 class PortfolioStatus(Enum):
     DELETED = "DELETED"
+    DRAFT = "DRAFT"
     PENDING = "PENDING"
     CONFIRMED = "CONFIRMED"
+    FAILED = "FAILED"
 
 
 class PortfolioSourceType(Enum):

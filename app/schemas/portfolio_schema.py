@@ -21,6 +21,15 @@ class PortfolioCreateWithPdf(PortfolioBase):
     """PDF 업로드를 통한 포트폴리오 생성을 위한 내부 사용 스키마"""
 
     file_path: str
+    name: Optional[str]
+
+
+class PortfolioCreationResponse(PortfolioBase):
+    """포트폴리오 생성 요청 시 즉시 반환되는 응답 스키마"""
+
+    id: uuid.UUID
+    name: Optional[str]
+    status: PortfolioStatus
 
 
 class PortfolioRead(PortfolioBase):

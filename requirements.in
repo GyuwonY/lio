@@ -29,5 +29,8 @@ python-jose[cryptography]
 google-auth
 google-cloud-storage
 
+# Push Notifications
+firebase-admin
+
 # Utilities
 python-multipart

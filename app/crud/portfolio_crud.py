@@ -110,6 +110,7 @@ class PortfolioCRUD:
         source_url: str | None,
         status: PortfolioStatus,
         items: List[PortfolioItem],
+        name: str | None,
     ) -> Portfolio:
         db_portfolio = Portfolio(
             user_id=user_id,
@@ -117,6 +118,7 @@ class PortfolioCRUD:
             source_url=source_url,
             status=status,
             items=items,
+            name=name
         )
 
         self.db.add(db_portfolio)

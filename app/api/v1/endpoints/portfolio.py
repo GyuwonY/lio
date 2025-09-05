@@ -1,6 +1,6 @@
-import uuid
 from typing import List
-from fastapi import APIRouter, Depends, Body, HTTPException, status
+import uuid
+from fastapi import APIRouter, Depends, Body, HTTPException, status, BackgroundTasks, Response
 
 from app.schemas.portfolio_schema import (
     PortfolioRead,
@@ -9,6 +9,7 @@ from app.schemas.portfolio_schema import (
     PortfolioCreateFromText,
     PortfolioCreateWithPdf,
     PortfolioConfirm,
+    PortfolioCreationResponse,
 )
 from app.models.user import User
 from app.services.auth_service import get_current_user
@@ -69,22 +70,36 @@ async def create_portfolio_from_text(
     )
 
 
-@router.post("/pdf", response_model=PortfolioRead)
+@router.post("/pdf", status_code=status.HTTP_202_ACCEPTED, response_model=PortfolioCreationResponse)
 async def create_portfolio_from_pdf(
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
     *,
-    upload_response: UploadURLResponse,
-) -> PortfolioRead:
+    portfolio_in: PortfolioCreateWithPdf,
+) -> PortfolioCreationResponse:
     """
-    업로드된 PDF 파일로부터 PENDING 상태의 포트폴리오를 생성합니다.
+    업로드된 PDF 파일로부터 포트폴리오 생성을 시작합니다.
 
-    1. `/upload-url`을 통해 받은 `file_path`를 사용합니다.
-    2. 생성된 포트폴리오는 사용자의 확인을 기다리는 `PENDING` 상태가 됩니다.
+    1. `/upload-url`을 통해 받은 `file_path`와 포트폴리오 이름을 전달합니다.
+    2. 즉시 `DRAFT` 상태의 포트폴리오 정보를 반환하고, 백그라운드에서 PDF 처리 및 분석을 시작합니다.
+    3. 작업이 완료되면 FCM을 통해 사용자에게 알림이 전송됩니다.
     """
-    portfolio_in = PortfolioCreateWithPdf(file_path=upload_response.file_path)
-    return await service.create_portfolio_from_pdf(
+    draft_portfolio = await service.create_draft_portfolio(
         portfolio_in=portfolio_in, current_user=current_user
+    )
+
+    background_tasks.add_task(
+        service.create_portfolio_from_pdf_background,
+        portfolio_id=draft_portfolio.id,
+        user_id=current_user.id,
+        file_path=portfolio_in.file_path,
+    )
+
+    return PortfolioCreationResponse(
+        id=draft_portfolio.id,
+        name=draft_portfolio.name,
+        status=draft_portfolio.status,
     )
 
 

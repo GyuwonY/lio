@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     GCS_BUCKET_NAME: str = Field(..., env="GCS_BUCKET_NAME")
     GOOGLE_BUCKET_CREDENTIALS: str = Field(..., env="GOOGLE_BUCKET_CREDENTIALS")
 
+    # Firebase
+    FIREBASE_CREDENTIALS: str = Field(..., env="FIREBASE_CREDENTIALS")
+
     # API
     API_V1_STR: str = Field("/api/v1", env="API_V1_STR")
 

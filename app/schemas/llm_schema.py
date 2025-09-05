@@ -34,7 +34,7 @@ class LLMPortfolioItem(BaseModel):
         description="항목의 요약되지 않은 원본 내용. 줄바꿈과 연속 공백은 하나의 공백으로 정제하고, 파싱 오류로 생긴 무의미한 문자는 제거해야 함"
     )
     tech_stack: Optional[List[str]] = Field(
-        None, description="명시적으로 나열된 기술 스택만 추출. 없는 경우 null"
+        None, description="'EXPERIENCE', 'PROJECT' 타입에 명시적으로 나열된 기술 스택만 추출. 없는 경우 null"
     )
 
 
