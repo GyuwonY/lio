@@ -67,7 +67,7 @@ class PortfolioService:
             source_url=None,
             status=PortfolioStatus.CONFIRMED,
             items=items,
-            name=portfolio_in.name
+            name=portfolio_in.name,
         )
 
         return PortfolioRead.model_validate(created_portfolio)
@@ -96,20 +96,26 @@ class PortfolioService:
                 portfolio_crud = PortfolioCRUD(db)
                 user_crud = UserCRUD(db)
 
-                portfolio = await portfolio_crud.get_portfolio_by_id(
+                portfolio = await portfolio_crud.get_portfolio_by_id_with_items(
                     portfolio_id=portfolio_id, user_id=user_id
                 )
                 if not portfolio:
-                    print(f"Error: Portfolio not found for background processing: {portfolio_id}")
+                    print(
+                        f"Error: Portfolio not found for background processing: {portfolio_id}"
+                    )
                     return
 
                 user = await user_crud.get_user_by_id(user_id=user_id)
 
-                text = await self.rag_service.extract_text_from_gcs_pdf(gcs_url=file_path)
+                text = await self.rag_service.extract_text_from_gcs_pdf(
+                    gcs_url=file_path
+                )
                 if not text.strip():
                     raise ValueError("PDF 파일에서 텍스트를 추출할 수 없습니다.")
 
-                structured_items = await self.llm_service.structure_portfolio_from_text(text=text)
+                structured_items = (
+                    await self.llm_service.structure_portfolio_from_text(text=text)
+                )
                 if not structured_items or not structured_items.items:
                     raise ValueError("LLM이 텍스트를 구조화하지 못했습니다.")
 
@@ -141,7 +147,7 @@ class PortfolioService:
                 print(f"Error processing portfolio {portfolio_id}: {e}")
                 if portfolio:
                     portfolio.status = PortfolioStatus.FAILED
-                
+
                 if user and user.fcm_token:
                     self.fcm_service.send_notification(
                         token=user.fcm_token,
@@ -156,7 +162,7 @@ class PortfolioService:
     async def confirm_portfolio(
         self, *, confirm_in: PortfolioConfirm, current_user: User
     ) -> PortfolioRead:
-        portfolio = await self.crud.get_portfolio_by_id(
+        portfolio = await self.crud.get_portfolio_by_id_with_items(
             portfolio_id=confirm_in.portfolio_id, user_id=current_user.id
         )
         if not portfolio:
@@ -172,7 +178,9 @@ class PortfolioService:
             )
 
         portfolio.status = PortfolioStatus.CONFIRMED
-        embeddings = await self.rag_service.embed_portfolio_items(items=portfolio.items)
+        embeddings = await self.rag_service.embed_portfolio_items(
+            items=portfolio.items
+        )
 
         for item, embedding in zip(portfolio.items, embeddings):
             item.embedding = embedding
@@ -183,14 +191,16 @@ class PortfolioService:
     async def get_portfolios_by_user(
         self, *, current_user: User
     ) -> List[PortfolioRead]:
-        portfolios = await self.crud.get_portfolios_by_user(user_id=current_user.id)
+        portfolios = await self.crud.get_portfolios_by_user_without_items(
+            user_id=current_user.id
+        )
         return [PortfolioRead.model_validate(p) for p in portfolios]
 
     async def get_portfolio_by_id(
         self, *, portfolio_id: uuid.UUID, current_user: User
     ) -> PortfolioRead:
         """ID로 특정 포트폴리오를 조회합니다."""
-        portfolio = await self.crud.get_portfolio_by_id(
+        portfolio = await self.crud.get_portfolio_by_id_with_items(
             portfolio_id=portfolio_id, user_id=current_user.id
         )
         if not portfolio:
@@ -211,7 +221,7 @@ class PortfolioService:
                 detail=f"{email} 사용자를 찾을 수 없습니다.",
             )
 
-        portfolio = await self.crud.get_confirmed_portfolio_by_id(
+        portfolio = await self.crud.get_confirmed_portfolio_by_id_with_items(
             portfolio_id=portfolio_id, user_id=user.id
         )
         if not portfolio:
@@ -220,10 +230,6 @@ class PortfolioService:
                 detail="포트폴리오를 찾을 수 없거나 해당 포트폴리오에 접근할 권한이 없습니다.",
             )
         return PortfolioRead.model_validate(portfolio)
-
-    async def get_user_portfolios(self, *, current_user: User) -> List[PortfolioRead]:
-        portfolios = await self.crud.get_portfolios_by_user(user_id=current_user.id)
-        return [PortfolioRead.model_validate(p) for p in portfolios]
 
     async def delete_portfolio(
         self, *, portfolio_id: uuid.UUID, current_user: User
@@ -246,7 +252,7 @@ class PortfolioService:
         portfolio_update: PortfolioUpdate,
         current_user: User,
     ) -> PortfolioRead:
-        portfolio = await self.crud.get_portfolio_by_id_without_item(
+        portfolio = await self.crud.get_portfolio_by_id_without_items(
             portfolio_id=portfolio_id, user_id=current_user.id
         )
 

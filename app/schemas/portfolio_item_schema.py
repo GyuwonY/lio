@@ -1,5 +1,5 @@
 import uuid
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import date, datetime
 from typing import List, Optional
 from app.models.portfolio_item import PortfolioItemType
@@ -7,6 +7,8 @@ from app.models.portfolio_item import PortfolioItemType
 
 # PortfolioItem 관련 스키마
 class PortfolioItemBase(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     type: PortfolioItemType
     topic: Optional[str] = None
     start_date: Optional[date] = None

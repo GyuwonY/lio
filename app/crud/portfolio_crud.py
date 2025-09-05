@@ -20,7 +20,9 @@ class PortfolioCRUD:
     def __init__(self, db: AsyncSession = Depends(get_db)):
         self.db = db
 
-    async def get_portfolios_by_user(self, *, user_id: uuid.UUID) -> List[Portfolio]:
+    async def get_portfolios_by_user_without_items(
+        self, *, user_id: uuid.UUID
+    ) -> List[Portfolio]:
         result = await self.db.execute(
             select(Portfolio).where(
                 Portfolio.user_id == user_id,
@@ -29,7 +31,7 @@ class PortfolioCRUD:
         )
         return list(result.scalars().unique().all())
 
-    async def get_portfolio_by_id_without_item(
+    async def get_portfolio_by_id_without_items(
         self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
     ) -> Portfolio | None:
         result = await self.db.execute(
@@ -39,7 +41,7 @@ class PortfolioCRUD:
         )
         return result.scalars().first()
 
-    async def get_confirmed_portfolio_by_id(
+    async def get_confirmed_portfolio_by_id_with_items(
         self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
     ) -> Portfolio | None:
         result = await self.db.execute(
@@ -59,7 +61,7 @@ class PortfolioCRUD:
         )
         return result.scalars().first()
 
-    async def get_portfolio_by_id(
+    async def get_portfolio_by_id_with_items(
         self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
     ) -> Portfolio | None:
         result = await self.db.execute(
@@ -118,14 +120,14 @@ class PortfolioCRUD:
             source_url=source_url,
             status=status,
             items=items,
-            name=name
+            name=name,
         )
 
         self.db.add(db_portfolio)
         await self.db.flush()
         await self.db.refresh(db_portfolio)
 
-        refreshed_portfolio = await self.get_portfolio_by_id(
+        refreshed_portfolio = await self.get_portfolio_by_id_with_items(
             portfolio_id=db_portfolio.id, user_id=user_id
         )
         return refreshed_portfolio
@@ -133,7 +135,7 @@ class PortfolioCRUD:
     async def delete_portfolio(
         self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
     ) -> bool:
-        db_portfolio = await self.get_portfolio_by_id(
+        db_portfolio = await self.get_portfolio_by_id_with_items(
             portfolio_id=portfolio_id, user_id=user_id
         )
         if not db_portfolio:

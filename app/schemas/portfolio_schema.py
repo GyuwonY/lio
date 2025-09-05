@@ -1,5 +1,5 @@
 import uuid
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from typing import List, Optional
 from app.models.portfolio import PortfolioStatus
@@ -7,7 +7,7 @@ from app.schemas.portfolio_item_schema import PortfolioItemCreate, PortfolioItem
 
 
 class PortfolioBase(BaseModel):
-    pass
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PortfolioCreateFromText(PortfolioBase):
