@@ -28,7 +28,7 @@ class PortfolioItemService:
     async def create_portfolio_items(
         self, *, portfolio_items_create: PortfolioItemsCreate, current_user: User
     ) -> List[PortfolioItemRead]:
-        portfolio = await self.portfolio_crud.get_portfolio_by_id_without_item(
+        portfolio = await self.portfolio_crud.get_portfolio_by_id_without_items(
             portfolio_id=portfolio_items_create.portfolio_id, user_id=current_user.id
         )
         if not portfolio:

@@ -262,7 +262,7 @@ class ChatMessageService:
                 detail="존재하지 않는 유저",
             )
 
-        portfolio = await self.portfolio_crud.get_portfolio_by_id(
+        portfolio = await self.portfolio_crud.get_portfolio_by_id_without_items(
             portfolio_id=chat_create.portfolio_id, user_id=user.id
         )
         if not portfolio:
