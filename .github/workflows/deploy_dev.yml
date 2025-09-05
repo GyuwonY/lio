@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - dev
+    paths-ignore:
+      - 'README.md'
+      - '**.md'
 
 env:
   PROJECT_ID: ${{ secrets.PROJECT_ID }}

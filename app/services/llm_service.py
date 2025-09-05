@@ -52,9 +52,9 @@ class LLMService:
             convert_system_message_to_human=True,
         )
         self.summarize_model = ChatGoogleGenerativeAI(
-            model=settings.CHAT_LLM_MODEL,
+            model=settings.SUMMARIZE_LLM_MODEL,
             google_api_key=settings.GEMINI_API_KEY,
-            temperature=0.2,
+            temperature=0.1,
             convert_system_message_to_human=True,
         )
 
