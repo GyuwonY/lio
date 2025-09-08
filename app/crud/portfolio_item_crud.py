@@ -46,13 +46,12 @@ class PortfolioItemCRUD:
         return list(result.scalars().all())
 
     async def get_confirmed_portfolio_items_by_portfolio_id(
-        self, *, portfolio_id: uuid.UUID, portfolio_item_type: PortfolioItemType
+        self, *, portfolio_id: uuid.UUID
     ) -> List[PortfolioItem]:
         result = await self.db.execute(
             select(PortfolioItem).where(
                 PortfolioItem.portfolio_id == portfolio_id,
                 PortfolioItem.status == PortfolioItemStatus.CONFIRMED,
-                PortfolioItem.type == portfolio_item_type,
             )
         )
         return list(result.scalars().all())

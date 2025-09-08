@@ -9,6 +9,7 @@ from app.schemas.chat_message_schema import ChatMessage
 
 class ChatSessionCreate(BaseModel):
     portfolio_id: uuid.UUID
+    user_id: uuid.UUID
 
 
 class ConversationTurn(BaseModel):

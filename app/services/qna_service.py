@@ -1,8 +1,9 @@
 import asyncio
 import uuid
 from typing import List
-from fastapi import Depends, HTTPException, status
+from fastapi import BackgroundTasks, Depends
 
+from app.db.session import AsyncSessionLocal
 from app.crud.portfolio_item_crud import PortfolioItemCRUD
 from app.crud.qna_crud import QnACRUD
 from app.models.qna import QnA, QnAStatus
@@ -12,7 +13,7 @@ from app.schemas.qna_schema import (
     QnAsUpdate,
 )
 from app.models.user import User
-from app.models.portfolio_item import PortfolioItem, PortfolioItemType
+from app.models.portfolio_item import PortfolioItem
 from app.services.llm_service import LLMService
 from app.services.rag_service import RAGService
 
@@ -51,41 +52,57 @@ class QnAService:
     async def generate_qna_for_all_portfolios_background(
         self,
         *,
+        user_id: uuid.UUID,
+        portfolio_id: uuid.UUID,
+    ):
+        async with AsyncSessionLocal() as db:
+            try:
+                portfolio_item_crud = PortfolioItemCRUD(db)
+                qna_crud = QnACRUD(db)
+
+                portfolio_items = (
+                    await portfolio_item_crud.get_confirmed_portfolio_items_by_portfolio_id(
+                        portfolio_id=portfolio_id
+                    )
+                )
+
+                if not portfolio_items:
+                    print(
+                        f"No confirmed portfolio items found for portfolio_id: {portfolio_id}"
+                    )
+                    return
+
+                tasks = [
+                    self._generate_qna_for_item(item=item) for item in portfolio_items
+                ]
+                results = await asyncio.gather(*tasks)
+
+                qnas_to_create = []
+                for result in results:
+                    qnas_to_create.extend(result)
+
+                if qnas_to_create:
+                    await qna_crud.bulk_create_qnas(
+                        qna_list=qnas_to_create, user_id=user_id
+                    )
+                await db.commit()
+            except Exception as e:
+                await db.rollback()
+                print(f"Error generating QnA for portfolio {portfolio_id}: {e}")
+
+    async def add_qna_generation_task(
+        self,
+        *,
+        background_tasks: BackgroundTasks,
         current_user: User,
         portfolio_id: uuid.UUID,
-        portfolio_item_type: PortfolioItemType,
-    ) -> List[QnA]:
-        portfolio_items = await self.portfolio_item_crud.get_confirmed_portfolio_items_by_portfolio_id(
-            portfolio_id=portfolio_id, portfolio_item_type=portfolio_item_type
+    ) -> dict:
+        background_tasks.add_task(
+            self.generate_qna_for_all_portfolios_background,
+            user_id=current_user.id,
+            portfolio_id=portfolio_id,
         )
-
-        if not portfolio_items:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="존재하지 않는 항목 타입",
-            )
-
-        tasks = [self._generate_qna_for_item(item=item) for item in portfolio_items]
-        results = await asyncio.gather(*tasks)
-
-        qnas_to_create = []
-        for result in results:
-            qnas_to_create.extend(result)
-
-        if qnas_to_create:
-            return await self.qna_crud.bulk_create_qnas(
-                qna_list=qnas_to_create, user_id=current_user.id
-            )
-
-        return []
-
-    # async def add_qna_generation_task(
-    #     self, *, background_tasks: BackgroundTasks, current_user: User, portfolio_id: uuid.UUID, portfolio_item_type: PortfolioItemType
-    # ) -> dict:
-    #     background_tasks.add_task(
-    #         self.generate_qna_for_all_portfolios_background, current_user=current_user, portfolio_id=portfolio_id, portfolio_item_type=portfolio_item_type
-    #     )
-    #     return {"message": "Q&A generation has been started in the background."}
+        return {"message": "Q&A generation has been started in the background."}
 
     async def get_qnas_by_portfolio(
         self, *, portfolio_id: uuid.UUID, current_user: User

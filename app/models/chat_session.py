@@ -19,7 +19,7 @@ class ChatSession(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
 
-    session_id: Mapped[str] = mapped_column(String(64), index=True)
+    session_id: Mapped[str] = mapped_column(String(128), index=True)
 
     portfolio_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("portfolios.id"), nullable=False

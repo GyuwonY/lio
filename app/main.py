@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+import time
+from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
 import redis.asyncio as redis
 
@@ -38,7 +39,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Lio-Agent API",
+    title="lio API",
     description="LLM 에이전트 기반 챗봇 포트폴리오 서비스",
     version="0.1.0",
     lifespan=lifespan,
@@ -55,7 +56,7 @@ app.add_middleware(
 
 @app.get("/", tags=["Root"])
 def read_root():
-    return {"message": "Welcome to Lio-Agent API"}
+    return {"message": "Welcome to lio API"}
 
 
 app.include_router(api_router, prefix=settings.API_V1_STR)

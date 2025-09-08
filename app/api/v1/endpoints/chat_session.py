@@ -13,12 +13,11 @@ router = APIRouter()
 async def create_session(
     response: Response,
     session_service: ChatSessionService = Depends(),
-    current_user: User = Depends(get_current_user),
     *,
     creat_session_request: ChatSessionCreate,
 ):
     chat_session = await session_service.create_session(
-        portfolio_id=creat_session_request.portfolio_id, user_id=current_user.id
+        portfolio_id=creat_session_request.portfolio_id, user_id=creat_session_request.user_id
     )
 
     response.set_cookie(

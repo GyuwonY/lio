@@ -22,7 +22,7 @@ class ChatSessionService:
     async def create_session(
         self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
     ) -> ChatSession:
-        session_id = f"{portfolio_id}:{str(uuid.uuid4())}"
+        session_id = f"{str(portfolio_id)}:{str(uuid.uuid4())}"
 
         chat_session = await self.chat_session_crud.create_chat_session(
             user_id=user_id,
