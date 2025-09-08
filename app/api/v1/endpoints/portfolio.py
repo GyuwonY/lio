@@ -121,7 +121,7 @@ async def confirm_portfolio(
     )
 
 
-@router.get("/", response_model=List[PortfolioReadWithoutItems])
+@router.get("", response_model=List[PortfolioReadWithoutItems])
 async def get_portfolios_by_user(
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
