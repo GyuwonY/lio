@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Body, HTTPException, status, BackgroundT
 
 from app.schemas.portfolio_schema import (
     PortfolioRead,
+    PortfolioReadWithoutItems,
     PortfolioUpdate,
     UploadURLResponse,
     PortfolioCreateFromText,
@@ -120,11 +121,11 @@ async def confirm_portfolio(
     )
 
 
-@router.get("/", response_model=List[PortfolioRead])
+@router.get("/", response_model=List[PortfolioReadWithoutItems])
 async def get_portfolios_by_user(
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
-) -> List[PortfolioRead]:
+) -> List[PortfolioReadWithoutItems]:
     """
     현재 사용자의 모든 포트폴리오 목록을 조회합니다.
     """
@@ -161,14 +162,14 @@ async def delete_portfolio(
     )
 
 
-@router.put("/{portfolio_id}", response_model=PortfolioRead)
+@router.put("/{portfolio_id}", response_model=PortfolioReadWithoutItems)
 async def update_portfolio(
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
     *,
     portfolio_id: uuid.UUID,
     portfolio_update: PortfolioUpdate,
-) -> PortfolioRead:
+) -> PortfolioReadWithoutItems:
     return await service.update_portfolio(
         current_user=current_user,
         portfolio_id=portfolio_id,

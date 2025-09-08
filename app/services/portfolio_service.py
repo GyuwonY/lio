@@ -10,6 +10,7 @@ from app.schemas.portfolio_schema import (
     PortfolioCreateWithPdf,
     PortfolioConfirm,
     PortfolioRead,
+    PortfolioReadWithoutItems,
     PortfolioUpdate,
 )
 from app.models.user import User
@@ -190,11 +191,11 @@ class PortfolioService:
 
     async def get_portfolios_by_user(
         self, *, current_user: User
-    ) -> List[PortfolioRead]:
+    ) -> List[PortfolioReadWithoutItems]:
         portfolios = await self.crud.get_portfolios_by_user_without_items(
             user_id=current_user.id
         )
-        return [PortfolioRead.model_validate(p) for p in portfolios]
+        return [PortfolioReadWithoutItems.model_validate(p) for p in portfolios]
 
     async def get_portfolio_by_id(
         self, *, portfolio_id: uuid.UUID, current_user: User
@@ -251,7 +252,7 @@ class PortfolioService:
         portfolio_id: uuid.UUID,
         portfolio_update: PortfolioUpdate,
         current_user: User,
-    ) -> PortfolioRead:
+    ) -> PortfolioReadWithoutItems:
         portfolio = await self.crud.get_portfolio_by_id_without_items(
             portfolio_id=portfolio_id, user_id=current_user.id
         )
@@ -263,4 +264,4 @@ class PortfolioService:
             )
 
         portfolio.name = portfolio_update.name
-        return PortfolioRead.model_validate(portfolio)
+        return PortfolioReadWithoutItems.model_validate(portfolio)

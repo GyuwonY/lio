@@ -32,6 +32,18 @@ class PortfolioCreationResponse(PortfolioBase):
     status: PortfolioStatus
 
 
+class PortfolioReadWithoutItems(PortfolioBase):
+    """포트폴리오 조회를 위한 스키마 (API 응답용)"""
+
+    id: uuid.UUID
+    user_id: uuid.UUID
+    status: PortfolioStatus
+    name: Optional[str] = None
+    source_type: str
+    source_url: Optional[str] = None
+    created_at: datetime
+
+
 class PortfolioRead(PortfolioBase):
     """포트폴리오 조회를 위한 스키마 (API 응답용)"""
 
