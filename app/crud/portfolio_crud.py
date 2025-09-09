@@ -1,7 +1,7 @@
 import uuid
 from typing import List
 from fastapi import Depends
-from sqlalchemy import literal_column, values
+from sqlalchemy import desc, literal_column, values
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload, aliased
@@ -12,7 +12,6 @@ from app.models.portfolio import Portfolio, PortfolioSourceType, PortfolioStatus
 from app.models.portfolio_item import (
     PortfolioItem,
     PortfolioItemStatus,
-    PortfolioItemType,
 )
 
 
@@ -27,7 +26,7 @@ class PortfolioCRUD:
             select(Portfolio).where(
                 Portfolio.user_id == user_id,
                 Portfolio.status != PortfolioStatus.DELETED,
-            )
+            ).order_by(desc(Portfolio.created_at))
         )
         return list(result.scalars().unique().all())
 

@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Depends, status, Response
 from app.schemas.chat_session_schema import ChatSessionCreate, ChatSessionCreateResponse
 from app.services.chat_session_service import ChatSessionService
-from app.services.auth_service import get_current_user
-from app.models.user import User
 
 router = APIRouter()
 

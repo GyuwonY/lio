@@ -23,18 +23,18 @@ class ChatSessionService:
         self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
     ) -> ChatSession:
         session_id = f"{str(portfolio_id)}:{str(uuid.uuid4())}"
-
-        chat_session = await self.chat_session_crud.create_chat_session(
-            user_id=user_id,
-            portfolio_id=portfolio_id,
-            session_id=session_id,
-        )
-
+        
         session_data = ChatContext()
         await self.redis_client.set(
             f"session:{session_id}",
             session_data.model_dump_json(),
             ex=self.context_expire_time,
+        )
+
+        chat_session = await self.chat_session_crud.create_chat_session(
+            user_id=user_id,
+            portfolio_id=portfolio_id,
+            session_id=session_id,
         )
         return chat_session
 
