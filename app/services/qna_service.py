@@ -1,12 +1,15 @@
 import asyncio
 import uuid
 from typing import List
-from fastapi import BackgroundTasks, Depends
+from fastapi import BackgroundTasks, Depends, HTTPException, status
 
+from app.crud.portfolio_crud import PortfolioCRUD
 from app.db.session import AsyncSessionLocal
 from app.crud.portfolio_item_crud import PortfolioItemCRUD
 from app.crud.qna_crud import QnACRUD
+from app.models.portfolio import PortfolioStatus
 from app.models.qna import QnA, QnAStatus
+from app.schemas.portfolio_schema import PortfolioReadWithoutItems
 from app.schemas.qna_schema import (
     QnARead,
     QnACreate,
@@ -25,11 +28,13 @@ class QnAService:
         llm_service: LLMService = Depends(),
         rag_service: RAGService = Depends(),
         portfolio_item_crud: PortfolioItemCRUD = Depends(),
+        portfolio_crud: PortfolioCRUD = Depends(),
     ):
         self.qna_crud = qna_crud
         self.portfolio_item_crud = portfolio_item_crud
         self.llm_service = llm_service
         self.rag_service = rag_service
+        self.portfolio_crud = portfolio_crud
 
     async def _generate_qna_for_item(self, *, item: PortfolioItem) -> List[QnACreate]:
         try:
@@ -57,23 +62,23 @@ class QnAService:
     ):
         async with AsyncSessionLocal() as db:
             try:
-                portfolio_item_crud = PortfolioItemCRUD(db)
+                portfolio_crud = PortfolioCRUD(db)
                 qna_crud = QnACRUD(db)
 
-                portfolio_items = (
-                    await portfolio_item_crud.get_confirmed_portfolio_items_by_portfolio_id(
-                        portfolio_id=portfolio_id
+                portfolio = (
+                    await portfolio_crud.get_confirmed_portfolio_by_id_with_items(
+                        portfolio_id=portfolio_id, user_id=user_id
                     )
                 )
 
-                if not portfolio_items:
+                if not portfolio:
                     print(
                         f"No confirmed portfolio items found for portfolio_id: {portfolio_id}"
                     )
                     return
 
                 tasks = [
-                    self._generate_qna_for_item(item=item) for item in portfolio_items
+                    self._generate_qna_for_item(item=item) for item in portfolio.items
                 ]
                 results = await asyncio.gather(*tasks)
 
@@ -85,6 +90,8 @@ class QnAService:
                     await qna_crud.bulk_create_qnas(
                         qna_list=qnas_to_create, user_id=user_id
                     )
+
+                portfolio.status = PortfolioStatus.PENDING_QNA
                 await db.commit()
             except Exception as e:
                 await db.rollback()
@@ -96,13 +103,24 @@ class QnAService:
         background_tasks: BackgroundTasks,
         current_user: User,
         portfolio_id: uuid.UUID,
-    ) -> dict:
+    ) -> PortfolioReadWithoutItems:
+        portfolio = await self.portfolio_crud.get_portfolio_by_id_without_items(
+            portfolio_id=portfolio_id, user_id=current_user.id
+        )
+        if not portfolio:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="포트폴리오를 찾을 수 없거나 해당 포트폴리오에 접근할 권한이 없습니다.",
+            )
+
+        portfolio.status = PortfolioStatus.DRAFT_QNA
+
         background_tasks.add_task(
             self.generate_qna_for_all_portfolios_background,
             user_id=current_user.id,
             portfolio_id=portfolio_id,
         )
-        return {"message": "Q&A generation has been started in the background."}
+        return PortfolioReadWithoutItems.model_validate(portfolio)
 
     async def get_qnas_by_portfolio(
         self, *, portfolio_id: uuid.UUID, current_user: User

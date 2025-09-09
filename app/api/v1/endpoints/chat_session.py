@@ -8,7 +8,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/", response_model=ChatSessionCreateResponse, status_code=status.HTTP_201_CREATED
+    "", response_model=ChatSessionCreateResponse, status_code=status.HTTP_201_CREATED
 )
 async def create_session(
     response: Response,
@@ -17,7 +17,8 @@ async def create_session(
     creat_session_request: ChatSessionCreate,
 ):
     chat_session = await session_service.create_session(
-        portfolio_id=creat_session_request.portfolio_id, user_id=creat_session_request.user_id
+        portfolio_id=creat_session_request.portfolio_id,
+        user_id=creat_session_request.user_id,
     )
 
     response.set_cookie(

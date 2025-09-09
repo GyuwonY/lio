@@ -10,21 +10,22 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 from app.services.storage_service import StorageService
-from app.db.session import get_db, get_embeddings_model
+from app.db.session import get_db
 from app.models.portfolio_item import PortfolioItem
 from app.models.qna import QnA
+from app.core.config import settings
 
 
 class RAGService:
     def __init__(
         self,
-        db: AsyncSession = Depends(get_db),
         storage_service: StorageService = Depends(),
-        embeddings_model: GoogleGenerativeAIEmbeddings = Depends(get_embeddings_model),
     ):
-        self.db = db
         self.storage_service = storage_service
-        self.embeddings_model = embeddings_model
+        self.embeddings_model = GoogleGenerativeAIEmbeddings(
+            model=settings.EMBEDDING_MODEL,
+            google_api_key=settings.GEMINI_API_KEY,
+        )
 
     async def extract_text_from_gcs_pdf(self, gcs_url: str) -> str:
         file_bytes = await self.storage_service.download_as_bytes(gcs_url)

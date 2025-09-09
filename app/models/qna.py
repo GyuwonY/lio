@@ -10,6 +10,7 @@ from sqlalchemy.sql import func
 from pgvector.sqlalchemy import Vector
 
 from app.db.session import Base
+
 if TYPE_CHECKING:
     from app.models.portfolio_item import PortfolioItem
     from app.models.user import User

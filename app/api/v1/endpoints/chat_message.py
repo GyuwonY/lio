@@ -6,7 +6,7 @@ from typing import Annotated
 router = APIRouter()
 
 
-@router.post("/", response_model=ChatMessageResponse)
+@router.post("", response_model=ChatMessageResponse)
 async def run_chat(
     chat_service: ChatMessageService = Depends(),
     session_id: Annotated[str | None, Cookie()] = None,

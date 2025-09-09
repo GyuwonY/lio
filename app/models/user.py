@@ -36,6 +36,12 @@ class User(Base):
 
     fcm_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
+    nickname: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+
+    address: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+
+    job: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

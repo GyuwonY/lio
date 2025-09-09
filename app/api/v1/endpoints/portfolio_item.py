@@ -15,7 +15,7 @@ from app.services.portfolio_item_service import PortfolioItemService
 router = APIRouter()
 
 
-@router.post("/", response_model=List[PortfolioItemRead])
+@router.post("", response_model=List[PortfolioItemRead])
 async def create_portfolio_items(
     current_user: User = Depends(get_current_user),
     service: PortfolioItemService = Depends(),
@@ -41,7 +41,7 @@ async def get_portfolio_items_by_portfolio_id(
     )
 
 
-@router.put("/", response_model=List[PortfolioItemRead])
+@router.put("", response_model=List[PortfolioItemRead])
 async def update_portfolio_items(
     current_user: User = Depends(get_current_user),
     service: PortfolioItemService = Depends(),
@@ -57,7 +57,7 @@ async def update_portfolio_items(
     return updated_portfolio
 
 
-@router.delete("/")
+@router.delete("")
 async def delete_portfolio_items(
     current_user: User = Depends(get_current_user),
     service: PortfolioItemService = Depends(),

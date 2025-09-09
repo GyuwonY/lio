@@ -5,7 +5,7 @@ import redis.asyncio as redis
 
 from app.api.v1.api import api_router
 from app.core.config import settings
-from app.db.session import async_engine, Base
+from app.db.session import async_engine, Base, close_redis_pool
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -21,20 +21,10 @@ async def lifespan(app: FastAPI):
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    # Create Redis connection pool and client
-    redis_pool = redis.ConnectionPool(
-        host=settings.REDIS_URL,
-        port=6379,
-        password=settings.REDIS_PASSWORD,
-        encoding="utf-8",
-        decode_responses=True,
-    )
-    app.state.redis = redis.Redis(connection_pool=redis_pool)
-
     yield
 
     # Shutdown
-    await app.state.redis.close()
+    await close_redis_pool()
     await async_engine.dispose()
 
 
@@ -44,6 +34,7 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+app.router.redirect_slashes = False
 
 app.add_middleware(
     CORSMiddleware,

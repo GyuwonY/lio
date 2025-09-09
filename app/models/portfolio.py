@@ -3,7 +3,7 @@ from enum import Enum
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import String, DateTime, ForeignKey, Enum as SQLAlchemyEnum
+from sqlalchemy import Boolean, String, DateTime, ForeignKey, Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -20,6 +20,9 @@ class PortfolioStatus(Enum):
     DRAFT = "DRAFT"
     PENDING = "PENDING"
     CONFIRMED = "CONFIRMED"
+    DRAFT_QNA = "DRAFT_QNA"
+    PENDING_QNA = "PENDING_QNA"
+    PUBLISHED = "PUBLISHED"
     FAILED = "FAILED"
 
 
@@ -38,7 +41,7 @@ class Portfolio(Base):
     name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     status: Mapped[PortfolioStatus] = mapped_column(
-        SQLAlchemyEnum(PortfolioStatus), nullable=False, default=PortfolioStatus.PENDING
+        SQLAlchemyEnum(PortfolioStatus), nullable=False, default=PortfolioStatus.DRAFT
     )
 
     source_type: Mapped[PortfolioSourceType] = mapped_column(

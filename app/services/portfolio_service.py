@@ -8,7 +8,6 @@ from app.models.portfolio_item import PortfolioItem, PortfolioItemStatus
 from app.schemas.portfolio_schema import (
     PortfolioCreateFromText,
     PortfolioCreateWithPdf,
-    PortfolioConfirm,
     PortfolioRead,
     PortfolioReadWithoutItems,
     PortfolioUpdate,
@@ -114,8 +113,8 @@ class PortfolioService:
                 if not text.strip():
                     raise ValueError("PDF 파일에서 텍스트를 추출할 수 없습니다.")
 
-                structured_items = (
-                    await self.llm_service.structure_portfolio_from_text(text=text)
+                structured_items = await self.llm_service.structure_portfolio_from_text(
+                    text=text
                 )
                 if not structured_items or not structured_items.items:
                     raise ValueError("LLM이 텍스트를 구조화하지 못했습니다.")
@@ -161,10 +160,10 @@ class PortfolioService:
                     await db.commit()
 
     async def confirm_portfolio(
-        self, *, confirm_in: PortfolioConfirm, current_user: User
+        self, *, portfolio_id: uuid.UUID, current_user: User
     ) -> PortfolioRead:
         portfolio = await self.crud.get_portfolio_by_id_with_items(
-            portfolio_id=confirm_in.portfolio_id, user_id=current_user.id
+            portfolio_id=portfolio_id, user_id=current_user.id
         )
         if not portfolio:
             raise HTTPException(
@@ -179,15 +178,45 @@ class PortfolioService:
             )
 
         portfolio.status = PortfolioStatus.CONFIRMED
-        embeddings = await self.rag_service.embed_portfolio_items(
-            items=portfolio.items
-        )
+        embeddings = await self.rag_service.embed_portfolio_items(items=portfolio.items)
 
         for item, embedding in zip(portfolio.items, embeddings):
             item.embedding = embedding
             item.status = PortfolioItemStatus.CONFIRMED
 
         return PortfolioRead.model_validate(portfolio)
+
+    async def publish_portfolio(
+        self, *, portfolio_id: uuid.UUID, current_user: User
+    ) -> PortfolioReadWithoutItems:
+        published_portfolio = (
+            await self.crud.get_published_portfolio_by_id_without_items(
+                portfolio_id=portfolio_id, user_id=current_user.id
+            )
+        )
+
+        portfolio = await self.crud.get_portfolio_by_id_without_items(
+            portfolio_id=portfolio_id, user_id=current_user.id
+        )
+
+        if not portfolio:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="존재하지 않는 포트폴리오입니다.",
+            )
+
+        if portfolio.status != PortfolioStatus.PENDING_QNA:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="확정되지 않은 포트폴리오입니다.",
+            )
+
+        if published_portfolio:
+            published_portfolio.status = PortfolioStatus.PENDING_QNA
+
+        portfolio.status = PortfolioStatus.PUBLISHED
+
+        return PortfolioReadWithoutItems.model_validate(portfolio)
 
     async def get_portfolios_by_user(
         self, *, current_user: User
@@ -211,10 +240,9 @@ class PortfolioService:
             )
         return PortfolioRead.model_validate(portfolio)
 
-    async def get_portfolio_by_email_and_id(
+    async def get_published_portfolio_by_email_and_id(
         self, *, email: str, portfolio_id: uuid.UUID
     ) -> PortfolioRead:
-        """이메일과 ID로 특정 포트폴리오를 조회합니다."""
         user = await self.user_crud.get_user_by_email(email=email)
         if not user:
             raise HTTPException(
@@ -222,7 +250,7 @@ class PortfolioService:
                 detail=f"{email} 사용자를 찾을 수 없습니다.",
             )
 
-        portfolio = await self.crud.get_confirmed_portfolio_by_id_with_items(
+        portfolio = await self.crud.get_published_portfolio_by_id_with_items(
             portfolio_id=portfolio_id, user_id=user.id
         )
         if not portfolio:

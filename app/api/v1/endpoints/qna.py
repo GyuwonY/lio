@@ -2,7 +2,7 @@ import uuid
 from fastapi import APIRouter, BackgroundTasks, Depends
 from typing import List
 
-from app.models.portfolio_item import PortfolioItemType
+from app.schemas.portfolio_schema import PortfolioReadWithoutItems
 from app.schemas.qna_schema import QnARead, QnAsConfirm, QnAsDelete, QnAsUpdate
 from app.models.user import User
 from app.services.auth_service import get_current_user
@@ -14,6 +14,7 @@ router = APIRouter()
 @router.post(
     "/generate",
     summary="포트폴리오 기반 Q&A 생성 (백그라운드)",
+    response_model=PortfolioReadWithoutItems,
 )
 async def generate_qna(
     background_tasks: BackgroundTasks,
@@ -21,13 +22,15 @@ async def generate_qna(
     service: QnAService = Depends(),
     *,
     portfolio_id: uuid.UUID,
-):
+) -> PortfolioReadWithoutItems:
     """
     사용자의 모든 포트폴리오 항목에 대한 Q&A 생성을 백그라운드 작업으로 시작합니다.
     API는 즉시 응답을 반환하며, 실제 생성 작업은 백그라운드에서 수행됩니다.
     """
     return await service.add_qna_generation_task(
-        background_tasks=background_tasks, current_user=current_user, portfolio_id=portfolio_id
+        background_tasks=background_tasks,
+        current_user=current_user,
+        portfolio_id=portfolio_id,
     )
 
 
@@ -88,7 +91,7 @@ async def update_qnas(
     return await service.update_qnas(qnas_in=qnas_in, current_user=current_user)
 
 
-@router.delete("/", response_model=List[QnARead], summary="Q&A 벌크 삭제")
+@router.delete("", response_model=List[QnARead], summary="Q&A 벌크 삭제")
 async def delete_qnas(
     current_user: User = Depends(get_current_user),
     service: QnAService = Depends(),

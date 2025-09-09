@@ -3,6 +3,7 @@ from firebase_admin import credentials, messaging
 from app.core.config import settings
 import json
 
+
 class FCMService:
     def __init__(self):
         if not firebase_admin._apps:
@@ -27,5 +28,6 @@ class FCMService:
         except Exception as e:
             print(f"Error sending FCM message: {e}")
             # TODO: Add proper logging
+
 
 fcm_service = FCMService()

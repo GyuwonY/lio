@@ -90,7 +90,7 @@ class AuthService:
             "refresh_token": self.create_refresh_token(subject=user.email),
             "token_type": "bearer",
         }
- 
+
     async def get_user_from_token(self, *, token: str, secret_key: str) -> User:
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

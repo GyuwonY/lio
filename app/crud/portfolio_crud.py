@@ -41,6 +41,18 @@ class PortfolioCRUD:
         )
         return result.scalars().first()
 
+    async def get_published_portfolio_by_id_without_items(
+        self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
+    ) -> Portfolio | None:
+        result = await self.db.execute(
+            select(Portfolio).where(
+                Portfolio.id == portfolio_id,
+                Portfolio.user_id == user_id,
+                Portfolio.status == PortfolioStatus.PUBLISHED,
+            )
+        )
+        return result.scalars().first()
+
     async def get_confirmed_portfolio_by_id_with_items(
         self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
     ) -> Portfolio | None:
@@ -57,6 +69,26 @@ class PortfolioCRUD:
                 Portfolio.id == portfolio_id,
                 Portfolio.user_id == user_id,
                 Portfolio.status == PortfolioStatus.CONFIRMED,
+            )
+        )
+        return result.scalars().first()
+
+    async def get_published_portfolio_by_id_with_items(
+        self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
+    ) -> Portfolio | None:
+        result = await self.db.execute(
+            select(Portfolio)
+            .options(
+                selectinload(
+                    Portfolio.items.and_(
+                        PortfolioItem.status == PortfolioItemStatus.CONFIRMED
+                    )
+                )
+            )
+            .where(
+                Portfolio.id == portfolio_id,
+                Portfolio.user_id == user_id,
+                Portfolio.status == PortfolioStatus.PUBLISHED,
             )
         )
         return result.scalars().first()
@@ -88,18 +120,6 @@ class PortfolioCRUD:
             select(PortfolioItem).where(
                 PortfolioItem.id.in_(portfolio_item_ids),
                 PortfolioItem.status != PortfolioItemStatus.DELETED,
-            )
-        )
-        return list(result.scalars().all())
-
-    async def get_confirmed_portfolio_items_by_portfolio_id(
-        self, *, portfolio_id: uuid.UUID, portfolio_item_type: PortfolioItemType
-    ) -> List[PortfolioItem]:
-        result = await self.db.execute(
-            select(PortfolioItem).where(
-                PortfolioItem.portfolio_id == portfolio_id,
-                PortfolioItem.status == PortfolioItemStatus.CONFIRMED,
-                PortfolioItem.type == portfolio_item_type,
             )
         )
         return list(result.scalars().all())
@@ -176,7 +196,10 @@ class PortfolioCRUD:
         items_alias = aliased(PortfolioItem)
         lateral_sq = (
             select(items_alias)
-            .where(items_alias.portfolio_id == portfolio_id)
+            .where(
+                items_alias.portfolio_id == portfolio_id,
+                items_alias.status == PortfolioItemStatus.CONFIRMED,
+            )
             .order_by(items_alias.embedding.l2_distance(queries_cte.c.embedding))
             .limit(3)
             .lateral("portfolio_items")

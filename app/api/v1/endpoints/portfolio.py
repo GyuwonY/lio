@@ -1,6 +1,14 @@
 from typing import List
 import uuid
-from fastapi import APIRouter, Depends, Body, HTTPException, status, BackgroundTasks, Response
+from fastapi import (
+    APIRouter,
+    Depends,
+    Body,
+    HTTPException,
+    status,
+    BackgroundTasks,
+    Response,
+)
 
 from app.schemas.portfolio_schema import (
     PortfolioRead,
@@ -43,15 +51,15 @@ async def get_upload_url(
 
 
 @router.get("/{email}/{portfolio_id}", response_model=PortfolioRead)
-async def get_portfolio_by_email_and_id(
+async def get_published_portfolio_by_email_and_id(
     email: str,
     portfolio_id: uuid.UUID,
     service: PortfolioService = Depends(),
 ) -> PortfolioRead:
     """
-    이메일과 포트폴리오 ID로 특정 포트폴리오를 조회합니다. (공개)
+    이메일과 포트폴리오 ID로 PUBLISHED 포트폴리오를 조회합니다. (공개)
     """
-    return await service.get_portfolio_by_email_and_id(
+    return await service.get_published_portfolio_by_email_and_id(
         email=email, portfolio_id=portfolio_id
     )
 
@@ -71,7 +79,11 @@ async def create_portfolio_from_text(
     )
 
 
-@router.post("/pdf", status_code=status.HTTP_202_ACCEPTED, response_model=PortfolioCreationResponse)
+@router.post(
+    "/pdf",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=PortfolioCreationResponse,
+)
 async def create_portfolio_from_pdf(
     background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
@@ -115,13 +127,28 @@ async def confirm_portfolio(
     PENDING 상태의 포트폴리오를 CONFIRMED 상태로 확정합니다.
     이 과정에서 각 항목의 임베딩이 생성 및 저장됩니다.
     """
-    confirm_in = PortfolioConfirm(portfolio_id=portfolio_id)
     return await service.confirm_portfolio(
-        confirm_in=confirm_in, current_user=current_user
+        portfolio_id=portfolio_id, current_user=current_user
     )
 
 
-@router.get("/", response_model=List[PortfolioReadWithoutItems])
+@router.post("/{portfolio_id}/publish", response_model=PortfolioReadWithoutItems)
+async def publish_portfolio(
+    current_user: User = Depends(get_current_user),
+    service: PortfolioService = Depends(),
+    *,
+    portfolio_id: uuid.UUID,
+) -> PortfolioReadWithoutItems:
+    """
+    PENDING_QNA 상태의 포트폴리오를 PUBLISHED 상태로 확정합니다.
+    기존 PUBLISHED 포트폴리오가 존재하는 경우 PENDING_QNA 로 변경
+    """
+    return await service.publish_portfolio(
+        portfolio_id=portfolio_id, current_user=current_user
+    )
+
+
+@router.get("", response_model=List[PortfolioReadWithoutItems])
 async def get_portfolios_by_user(
     current_user: User = Depends(get_current_user),
     service: PortfolioService = Depends(),
