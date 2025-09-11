@@ -3,7 +3,7 @@ from enum import Enum
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import Boolean, String, DateTime, ForeignKey, Enum as SQLAlchemyEnum
+from sqlalchemy import String, DateTime, ForeignKey, Enum as SQLAlchemyEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func

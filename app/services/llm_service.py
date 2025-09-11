@@ -158,7 +158,7 @@ class LLMService:
         chain = prompt | self.chat_model | fix_parser
 
         response = await chain.ainvoke({})
-        return response.answer
+        return response
 
     async def summarize_conversation(self, *, conversation_history: str) -> str:
         parser = StrOutputParser()

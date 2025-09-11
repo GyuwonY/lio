@@ -66,7 +66,7 @@ class QnAService:
                 qna_crud = QnACRUD(db)
 
                 portfolio = (
-                    await portfolio_crud.get_confirmed_portfolio_by_id_with_items(
+                    await portfolio_crud.get_draft_qna_portfolio_by_id_with_items(
                         portfolio_id=portfolio_id, user_id=user_id
                     )
                 )

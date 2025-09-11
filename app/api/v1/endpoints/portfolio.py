@@ -7,7 +7,6 @@ from fastapi import (
     HTTPException,
     status,
     BackgroundTasks,
-    Response,
 )
 
 from app.schemas.portfolio_schema import (
@@ -17,7 +16,6 @@ from app.schemas.portfolio_schema import (
     UploadURLResponse,
     PortfolioCreateFromText,
     PortfolioCreateWithPdf,
-    PortfolioConfirm,
     PortfolioCreationResponse,
 )
 from app.models.user import User

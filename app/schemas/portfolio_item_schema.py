@@ -53,7 +53,7 @@ class PortfolioItemDelete(BaseModel):
 class PortfolioItemLLMInput(BaseModel):
     type: str
     topic: Optional[str]
-    start_date: Optional[date]
-    end_date: Optional[date]
+    start_date: Optional[str]
+    end_date: Optional[str]
     content: str
     tech_stack: Optional[List[str]]

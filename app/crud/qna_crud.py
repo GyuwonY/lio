@@ -1,7 +1,7 @@
 import uuid
 from typing import List
 from fastapi import Depends
-from sqlalchemy import literal_column, values, insert
+from sqlalchemy import cast, literal_column, values, insert
 from sqlalchemy.orm import aliased
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -65,6 +65,7 @@ class QnACRUD:
         *,
         portfolio_item_ids: List[uuid.UUID],
         embeddings: List[List[float]],
+        limit: int = 3,
     ) -> List[QnA]:
         if not embeddings or not portfolio_item_ids:
             return []
@@ -83,14 +84,20 @@ class QnACRUD:
 
         lateral_sq = (
             query.order_by(
-                qna_alias.question_embedding.cosine_distance(queries_cte.c.embedding)
+                qna_alias.embedding.cosine_distance(
+                    cast(queries_cte.c.embedding, Vector)
+                )
             )
-            .limit(3)
-            .lateral("qnas")
+            .limit(limit)
+            .lateral()
         )
 
-        stmt = select(lateral_sq).join(queries_cte, literal_column("true"))
+        qna_from_lateral = aliased(QnA, lateral_sq)
+        stmt = (
+            select(qna_from_lateral)
+            .select_from(queries_cte)
+            .join(qna_from_lateral, literal_column("true"))
+        )
         results = await self.db.execute(stmt)
 
-        unique_qnas = {qna.id: qna for qna in results.scalars().all()}
-        return list(unique_qnas.values())
+        return list(results.scalars().unique().all())

@@ -1,7 +1,5 @@
-import time
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from contextlib import asynccontextmanager
-import redis.asyncio as redis
 
 from app.api.v1.api import api_router
 from app.core.config import settings

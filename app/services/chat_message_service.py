@@ -143,8 +143,10 @@ class ChatMessageService:
                 PortfolioItemLLMInput(
                     type=item.type.value,
                     topic=item.topic,
-                    start_date=item.start_date,
-                    end_date=item.end_date,
+                    start_date=item.start_date.isoformat()
+                    if item.start_date
+                    else None,
+                    end_date=item.end_date.isoformat() if item.end_date else None,
                     content=item.content,
                     tech_stack=item.tech_stack,
                 )
@@ -168,7 +170,7 @@ class ChatMessageService:
             portfolio_item_ids=portfolio_item_ids, embeddings=embeddings
         )
 
-        return {"qnas": retrieved_qnas}
+        return {"qnas": [QnALLMInput(answer=qna.answer) for qna in retrieved_qnas]}
 
     async def generate_chat_message(self, state: GraphState):
         conversation_history = "\n".join(
@@ -188,7 +190,7 @@ class ChatMessageService:
             portfolio_context=json.dumps(portfolio_context, ensure_ascii=False),
             user_input=state.input,
         )
-
+        
         return {"chat_message": llm_chat_answer}
 
     async def save_chat(self, state: GraphState):

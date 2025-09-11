@@ -9,7 +9,6 @@ from app.db.session import get_db
 from app.models.portfolio_item import (
     PortfolioItem,
     PortfolioItemStatus,
-    PortfolioItemType,
 )
 from app.schemas.portfolio_item_schema import PortfolioItemsCreate
 
