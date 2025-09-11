@@ -18,6 +18,7 @@ class ChatMessageType(Enum):
     EDUCATION = "EDUCATION"
     SUGGEST = "SUGGEST"
     CONTACT = "CONTACT"
+    NO_INFO = "NO_INFO"
     ETC = "ETC"
 
 

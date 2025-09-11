@@ -65,7 +65,7 @@ class QnACRUD:
         *,
         portfolio_item_ids: List[uuid.UUID],
         embeddings: List[List[float]],
-        limit: int = 3,
+        limit: int = 5,
     ) -> List[QnA]:
         if not embeddings or not portfolio_item_ids:
             return []

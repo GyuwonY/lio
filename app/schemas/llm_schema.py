@@ -49,6 +49,6 @@ class LLMSplitQueries(BaseModel):
 
 class LLMChatAnswer(BaseModel):
     type: ChatMessageType = Field(
-        description="항목 유형. 반드시 'TECH','PERSONAL','EDUCATION','SUGGEST','CONTACT','ETC' 중 하나여야 함"
+        description="항목 유형. 반드시 'TECH','PERSONAL','EDUCATION','SUGGEST','CONTACT','ETC', 'NO_INFO' 중 하나여야 함"
     )
     answer: str = Field(description="질문에 대한 응답")

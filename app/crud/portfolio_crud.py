@@ -188,7 +188,7 @@ class PortfolioCRUD:
         *,
         embeddings: List[List[float]],
         portfolio_id: uuid.UUID,
-        limit: int = 3,
+        limit: int = 5,
     ) -> List[PortfolioItem]:
         queries_cte = (
             values(literal_column("embedding", Vector), name="queries")

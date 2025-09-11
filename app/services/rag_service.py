@@ -52,14 +52,14 @@ class RAGService:
     ) -> List[List[float]]:
         texts_to_embed = []
         for item in items:
-            full_text = f"type: {item.type}\n"
+            full_text = f"{item.content}\n"
             if item.topic:
-                full_text += f"topic: {item.topic}\n"
+                full_text += f"{item.topic}\n"
             if item.start_date:
-                full_text += f"start_date: {item.start_date}\n"
+                full_text += f"{item.start_date}\n"
             if item.end_date:
-                full_text += f"end_date: {item.end_date}\n"
-            full_text += f"content: {item.content}"
+                full_text += f"{item.end_date}\n"
+            
             texts_to_embed.append(full_text)
         if not texts_to_embed:
             return []
@@ -70,7 +70,7 @@ class RAGService:
     async def embed_qnas(self, qnas: List[QnA]) -> List[List[float]]:
         texts_to_embed = []
         for qna in qnas:
-            full_text = f"question: {qna.question}\n answer: {qna.answer}"
+            full_text = f"{qna.question}\n {qna.answer}"
             texts_to_embed.append(full_text)
         if not texts_to_embed:
             return []
