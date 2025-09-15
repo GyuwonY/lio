@@ -36,7 +36,7 @@ class User(Base):
 
     fcm_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
-    nickname: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
+    nickname: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, unique=True)
 
     address: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
 

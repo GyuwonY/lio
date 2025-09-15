@@ -58,8 +58,6 @@ class PortfolioRead(PortfolioBase):
 
 
 class PublishedPortfolioRead(PortfolioBase):
-    """포트폴리오 조회를 위한 스키마 (API 응답용)"""
-
     id: uuid.UUID
     user_id: uuid.UUID
     status: PortfolioStatus

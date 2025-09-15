@@ -49,5 +49,5 @@ flowchart TD
 ### 🚀 CI/CD 파이프라인
 
 - **GitHub Actions**를 사용하여 CI/CD 파이프라인을 구축했습니다.
-- `main` 브랜치에 코드가 푸시되면, `.github/workflows/deploy_dev.yml` 워크플로우가 자동으로 실행됩니다.
+- `dev` 브랜치에 코드가 푸시되면, `.github/workflows/deploy_dev.yml` 워크플로우가 자동으로 실행됩니다.
 - 이 파이프라인은 Docker 이미지 빌드 및 개발 환경으로의 자동 배포를 수행하여 안정적이고 일관된 배포 프로세스를 보장합니다.

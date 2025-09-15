@@ -35,6 +35,10 @@ class UserUpdate(BaseModel):
 class UserResponse(UserBase):
     id: uuid.UUID
     created_at: datetime
+    
+    
+class CheckNickname(BaseModel):
+    nickname: str
 
 
 class Token(BaseModel):

@@ -14,11 +14,15 @@ class UserCRUD:
         self.db = db
 
     async def get_user_by_email(self, *, email: str) -> Optional[User]:
-        result = await self.db.execute(select(User).filter(User.email == email))
+        result = await self.db.execute(select(User).where(User.email == email))
         return result.scalars().first()
 
     async def get_user_by_id(self, *, user_id: uuid.UUID) -> Optional[User]:
-        result = await self.db.execute(select(User).filter(User.id == user_id))
+        result = await self.db.execute(select(User).where(User.id == user_id))
+        return result.scalars().first()
+    
+    async def get_user_by_nickname(self, *, nickname: str) -> Optional[User]:
+        result = await self.db.execute(select(User).where(User.nickname == nickname))
         return result.scalars().first()
 
     async def create_user(self, *, user_in: UserCreate) -> User:
