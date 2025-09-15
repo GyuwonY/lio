@@ -7,12 +7,13 @@ from app.api.v1.endpoints import (
     portfolio_item,
     chat_message,
     chat_session,
+    user,
 )
 
 api_router = APIRouter()
 
 api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
-api_router.include_router(auth.router, prefix="/user", tags=["User"])
+api_router.include_router(user.router, prefix="/user", tags=["User"])
 api_router.include_router(chat_session.router, prefix="/chat-session", tags=["Session"])
 api_router.include_router(portfolio.router, prefix="/portfolio", tags=["Portfolio"])
 api_router.include_router(
