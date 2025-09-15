@@ -21,15 +21,15 @@ async def update_user(
     )
 
 
-@router.get("/check/nickname")
+@router.get("/check/nickname/{nickname}")
 async def check_nickname(
     current_user: User = Depends(get_current_user),
     user_service: UserService = Depends(),
     *,
-    checkNickname: CheckNickname,
+    nickname: str,
 ):
     return await user_service.check_nickname(
-        checkNickname = checkNickname
+        nickname = nickname
     )
 
 

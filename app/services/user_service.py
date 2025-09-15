@@ -25,8 +25,8 @@ class UserService:
         return UserRead.model_validate(current_user)
     
     
-    async def check_nickname(self, *, checkNickname: CheckNickname):
-        duplicate_user = await self.user_crud.get_user_by_nickname(nickname=checkNickname.nickname)
+    async def check_nickname(self, *, nickname: str):
+        duplicate_user = await self.user_crud.get_user_by_nickname(nickname=nickname)
         if duplicate_user:
             raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
