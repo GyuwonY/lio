@@ -17,6 +17,7 @@ from app.schemas.qna_schema import (
 )
 from app.models.user import User
 from app.models.portfolio_item import PortfolioItem
+from app.services.fcm_service import FCMService
 from app.services.llm_service import LLMService
 from app.services.rag_service import RAGService
 
@@ -29,12 +30,14 @@ class QnAService:
         rag_service: RAGService = Depends(),
         portfolio_item_crud: PortfolioItemCRUD = Depends(),
         portfolio_crud: PortfolioCRUD = Depends(),
+        fcm_service: FCMService = Depends(),
     ):
         self.qna_crud = qna_crud
         self.portfolio_item_crud = portfolio_item_crud
         self.llm_service = llm_service
         self.rag_service = rag_service
         self.portfolio_crud = portfolio_crud
+        self.fcm_service = fcm_service
 
     async def _generate_qna_for_item(self, *, item: PortfolioItem) -> List[QnACreate]:
         try:
@@ -57,7 +60,7 @@ class QnAService:
     async def generate_qna_for_all_portfolios_background(
         self,
         *,
-        user_id: uuid.UUID,
+        current_user: User,
         portfolio_id: uuid.UUID,
     ):
         async with AsyncSessionLocal() as db:
@@ -67,7 +70,7 @@ class QnAService:
 
                 portfolio = (
                     await portfolio_crud.get_draft_qna_portfolio_by_id_with_items(
-                        portfolio_id=portfolio_id, user_id=user_id
+                        portfolio_id=portfolio_id, user_id=current_user.id
                     )
                 )
 
@@ -88,14 +91,27 @@ class QnAService:
 
                 if qnas_to_create:
                     await qna_crud.bulk_create_qnas(
-                        qna_list=qnas_to_create, user_id=user_id
+                        qna_list=qnas_to_create, user_id=current_user.id
                     )
 
                 portfolio.status = PortfolioStatus.PENDING_QNA
                 await db.commit()
+                
+                if current_user and current_user.fcm_token:
+                    self.fcm_service.send_notification(
+                        token=current_user.fcm_token,
+                        title="create_qna_success",
+                        body=f"{portfolio_id}",
+                    )
             except Exception as e:
                 await db.rollback()
                 print(f"Error generating QnA for portfolio {portfolio_id}: {e}")
+                if current_user and current_user.fcm_token:
+                    self.fcm_service.send_notification(
+                        token=current_user.fcm_token,
+                        title="create_qna_fail",
+                        body=f"{portfolio_id}",
+                    )
 
     async def add_qna_generation_task(
         self,
@@ -117,7 +133,7 @@ class QnAService:
 
         background_tasks.add_task(
             self.generate_qna_for_all_portfolios_background,
-            user_id=current_user.id,
+            current_user=current_user,
             portfolio_id=portfolio_id,
         )
         return PortfolioReadWithoutItems.model_validate(portfolio)

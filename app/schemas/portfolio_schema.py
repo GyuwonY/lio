@@ -57,6 +57,21 @@ class PortfolioRead(PortfolioBase):
     items: List[PortfolioItemRead] = []
 
 
+class PublishedPortfolioRead(PortfolioBase):
+    """포트폴리오 조회를 위한 스키마 (API 응답용)"""
+
+    id: uuid.UUID
+    user_id: uuid.UUID
+    status: PortfolioStatus
+    name: Optional[str] = None
+    created_at: datetime
+    items: List[PortfolioItemRead] = []
+    first_name: Optional[str]
+    last_name: Optional[str]
+    address: Optional[str]
+    job: Optional[str]
+
+
 class PortfolioUpdate(PortfolioBase):
     name: Optional[str] = None
 

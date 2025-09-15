@@ -5,12 +5,14 @@ from app.crud.portfolio_crud import PortfolioCRUD
 from app.crud.user_crud import UserCRUD
 from app.db.session import AsyncSessionLocal
 from app.models.portfolio_item import PortfolioItem, PortfolioItemStatus
+from app.schemas.portfolio_item_schema import PortfolioItemRead
 from app.schemas.portfolio_schema import (
     PortfolioCreateFromText,
     PortfolioCreateWithPdf,
     PortfolioRead,
     PortfolioReadWithoutItems,
     PortfolioUpdate,
+    PublishedPortfolioRead,
 )
 from app.models.user import User
 from app.models.portfolio import PortfolioSourceType, PortfolioStatus
@@ -242,7 +244,7 @@ class PortfolioService:
 
     async def get_published_portfolio_by_email_and_id(
         self, *, email: str, portfolio_id: uuid.UUID
-    ) -> PortfolioRead:
+    ) -> PublishedPortfolioRead:
         user = await self.user_crud.get_user_by_email(email=email)
         if not user:
             raise HTTPException(
@@ -258,7 +260,18 @@ class PortfolioService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="포트폴리오를 찾을 수 없거나 해당 포트폴리오에 접근할 권한이 없습니다.",
             )
-        return PortfolioRead.model_validate(portfolio)
+        return PublishedPortfolioRead(
+            id=portfolio.id,
+            user_id=user.id,
+            status=portfolio.status,
+            name=portfolio.name,
+            created_at=portfolio.created_at,
+            items=[PortfolioItemRead.model_validate(item) for item in portfolio.items],
+            first_name=user.first_name,
+            last_name=user.last_name,
+            address=user.address,
+            job=user.job,
+        )
 
     async def delete_portfolio(
         self, *, portfolio_id: uuid.UUID, current_user: User

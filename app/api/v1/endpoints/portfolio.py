@@ -13,6 +13,7 @@ from app.schemas.portfolio_schema import (
     PortfolioRead,
     PortfolioReadWithoutItems,
     PortfolioUpdate,
+    PublishedPortfolioRead,
     UploadURLResponse,
     PortfolioCreateFromText,
     PortfolioCreateWithPdf,
@@ -48,12 +49,12 @@ async def get_upload_url(
     return UploadURLResponse(upload_url=url, file_path=file_path)
 
 
-@router.get("/{email}/{portfolio_id}", response_model=PortfolioRead)
+@router.get("/{email}/{portfolio_id}", response_model=PublishedPortfolioRead)
 async def get_published_portfolio_by_email_and_id(
     email: str,
     portfolio_id: uuid.UUID,
     service: PortfolioService = Depends(),
-) -> PortfolioRead:
+) -> PublishedPortfolioRead:
     """
     이메일과 포트폴리오 ID로 PUBLISHED 포트폴리오를 조회합니다. (공개)
     """
