@@ -44,4 +44,7 @@ async def get_user_from_token(
         picture=current_user.picture,
         locale=current_user.locale,
         created_at=current_user.created_at,
+        nickname=current_user.nickname,
+        job=current_user.job,
+        address=current_user.address
     )
