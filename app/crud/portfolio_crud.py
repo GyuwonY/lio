@@ -72,8 +72,8 @@ class PortfolioCRUD:
         )
         return result.scalars().first()
 
-    async def get_published_portfolio_by_id_with_items(
-        self, *, portfolio_id: uuid.UUID, user_id: uuid.UUID
+    async def get_published_portfolio_by_user_id_with_items(
+        self, *, user_id: uuid.UUID
     ) -> Portfolio | None:
         result = await self.db.execute(
             select(Portfolio)
@@ -85,7 +85,6 @@ class PortfolioCRUD:
                 )
             )
             .where(
-                Portfolio.id == portfolio_id,
                 Portfolio.user_id == user_id,
                 Portfolio.status == PortfolioStatus.PUBLISHED,
             )

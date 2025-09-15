@@ -242,18 +242,18 @@ class PortfolioService:
             )
         return PortfolioRead.model_validate(portfolio)
 
-    async def get_published_portfolio_by_email_and_id(
-        self, *, email: str, portfolio_id: uuid.UUID
+    async def get_published_portfolio_by_email(
+        self, *, nickname: str
     ) -> PublishedPortfolioRead:
-        user = await self.user_crud.get_user_by_email(email=email)
+        user = await self.user_crud.get_user_by_nickname(nickname=nickname)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"{email} 사용자를 찾을 수 없습니다.",
+                detail=f"{nickname} 사용자를 찾을 수 없습니다.",
             )
 
-        portfolio = await self.crud.get_published_portfolio_by_id_with_items(
-            portfolio_id=portfolio_id, user_id=user.id
+        portfolio = await self.crud.get_published_portfolio_by_user_id_with_items(
+            user_id=user.id
         )
         if not portfolio:
             raise HTTPException(

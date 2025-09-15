@@ -49,17 +49,16 @@ async def get_upload_url(
     return UploadURLResponse(upload_url=url, file_path=file_path)
 
 
-@router.get("/{email}/{portfolio_id}", response_model=PublishedPortfolioRead)
-async def get_published_portfolio_by_email_and_id(
-    email: str,
-    portfolio_id: uuid.UUID,
+@router.get("/{nickname}", response_model=PublishedPortfolioRead)
+async def get_published_portfolio_by_email(
+    nickname: str,
     service: PortfolioService = Depends(),
 ) -> PublishedPortfolioRead:
     """
     이메일과 포트폴리오 ID로 PUBLISHED 포트폴리오를 조회합니다. (공개)
     """
-    return await service.get_published_portfolio_by_email_and_id(
-        email=email, portfolio_id=portfolio_id
+    return await service.get_published_portfolio_by_email(
+        nickname=nickname
     )
 
 
