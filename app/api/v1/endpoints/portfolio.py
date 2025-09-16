@@ -49,7 +49,7 @@ async def get_upload_url(
     return UploadURLResponse(upload_url=url, file_path=file_path)
 
 
-@router.get("/{nickname}", response_model=PublishedPortfolioRead)
+@router.get("/published/{nickname}", response_model=PublishedPortfolioRead)
 async def get_published_portfolio_by_email(
     nickname: str,
     service: PortfolioService = Depends(),
