@@ -22,6 +22,8 @@ async def create_session(
     response.set_cookie(
         key="session_id",
         value=chat_session.session_id,
+        domain=".ai-lio.com",
+        path="/",
         httponly=True,
         samesite="strict",
         secure=True,
