@@ -6,7 +6,7 @@ from datetime import datetime
 
 class ChatMessageCreate(BaseModel):
     question: str
-    email: str
+    user_id: uuid.UUID
     portfolio_id: uuid.UUID
 
 

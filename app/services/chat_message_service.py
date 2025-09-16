@@ -257,7 +257,7 @@ class ChatMessageService:
         return {}
 
     async def run_chat(self, chat_create: ChatMessageCreate, session_id: str) -> str:
-        user = await self.user_crud.get_user_by_email(email=chat_create.email)
+        user = await self.user_crud.get_user_by_id(user_id=chat_create.user_id)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
