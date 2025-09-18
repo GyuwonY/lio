@@ -29,5 +29,3 @@ class FCMService:
             print(f"Error sending FCM message: {e}")
             # TODO: Add proper logging
 
-
-fcm_service = FCMService()

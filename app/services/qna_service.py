@@ -128,6 +128,12 @@ class QnAService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="포트폴리오를 찾을 수 없거나 해당 포트폴리오에 접근할 권한이 없습니다.",
             )
+            
+        if portfolio.status != PortfolioStatus.CONFIRMED:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="확정되지 않은 포트폴리오 입니다.",
+            )
 
         portfolio.status = PortfolioStatus.DRAFT_QNA
 
@@ -164,27 +170,8 @@ class QnAService:
         )
         update_qna_dict = {qna.id: qna for qna in qnas_in.qnas}
 
-        qnas_to_re_embed = []
-        for qna in qnas:
-            if qna.status == QnAStatus.CONFIRMED and (
-                qna.question != update_qna_dict[qna.id].question
-                or qna.answer != update_qna_dict[qna.id].answer
-            ):
-                qnas_to_re_embed.append(qna)
-
-        if qnas_to_re_embed:
-            embeddings = await self.rag_service.embed_qnas(qnas=qnas_to_re_embed)
-            embedding_map = {
-                qna.id: emb for qna, emb in zip(qnas_to_re_embed, embeddings)
-            }
-        else:
-            embedding_map = {}
-
         for qna in qnas:
             qna_update = update_qna_dict[qna.id]
-            if embedding_map.get(qna.id):
-                qna.embedding = embedding_map[qna.id]
-
             qna.question = qna_update.question
             qna.answer = qna_update.answer
 

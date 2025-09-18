@@ -58,28 +58,8 @@ class PortfolioItemService:
         )
         item_update_dict = {item.id: item for item in items_in.items}
 
-        items_to_re_embed = []
-        for item in portfolio_items:
-            if (
-                item.status == PortfolioItemStatus.CONFIRMED
-                and item.content != item_update_dict[item.id].content
-            ):
-                items_to_re_embed.append(item)
-
-        if items_to_re_embed:
-            embeddings = await self.rag_service.embed_portfolio_items(
-                items=items_to_re_embed
-            )
-            embedding_map = {
-                item.id: emb for item, emb in zip(items_to_re_embed, embeddings)
-            }
-        else:
-            embedding_map = {}
-
         for item in portfolio_items:
             item_update = item_update_dict[item.id]
-            if embedding_map.get(item.id):
-                item.embedding = embedding_map[item.id]
 
             item.content = item_update.content
             item.start_date = (
