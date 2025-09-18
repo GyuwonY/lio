@@ -54,7 +54,7 @@ class Portfolio(Base):
     )
 
     user: Mapped["User"] = relationship(back_populates="portfolios")
-    items: Mapped[List["PortfolioItem"]] = relationship(back_populates="portfolio")
+    items: Mapped[List["PortfolioItem"]] = relationship(back_populates="portfolio", order_by="desc(PortfolioItem.start_date)")
     chat_sessions: Mapped[List["ChatSession"]] = relationship(
         back_populates="portfolio"
     )
