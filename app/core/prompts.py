@@ -23,7 +23,6 @@ STRUCTURE_PORTFOLIO_SYSTEM_PROMPT = """
     -   `SKILLS`: 보유 기술을 목록 형태로 나열.
     -   `EDUCATION`: 학교명, 전공, 재학 기간, 교육 수료 정보.
     -   `CONTACT`: 이메일, 전화번호, GitHub 등 연락처 정보.
-    -   `ETC` (Fallback): 위의 어떤 유형에도 속하지 않는 내용(예: 수상 경력, 자격증, 대외활동 등)일 경우 `ETC`로 지정. 데이터를 누락시키지 않는 것이 중요.
 
 * **topic**:
     -   `EXPERIENCE` 타입: 회사명 추출.

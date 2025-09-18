@@ -1,7 +1,7 @@
 from typing import List
 import uuid
 from fastapi import Depends
-from sqlalchemy import insert
+from sqlalchemy import desc, insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -77,6 +77,6 @@ class PortfolioItemCRUD:
             select(PortfolioItem).where(
                 PortfolioItem.portfolio_id == portfolio_id,
                 PortfolioItem.status != PortfolioItemStatus.DELETED,
-            )
+            ).order_by(desc(PortfolioItem.start_date))
         )
         return list(result.scalars().all())
