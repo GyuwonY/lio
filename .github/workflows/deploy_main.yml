@@ -40,8 +40,8 @@ jobs:
           env_vars: |
             GCP_PROJECT_ID=${{ env.PROJECT_ID }}
             APP_ENV=prod
-            LANGCHAIN_TRACING_V2=true
-            LANGCHAIN_PROJECT=lio
+            LANGCHAIN_TRACING_V2=false
+            LANGCHAIN_PROJECT=lio-dev
           secrets: |
             ACCESS_TOKEN_SECRET_KEY=ACCESS_TOKEN_SECRET_KEY:latest
             DATABASE_URL=DATABASE_URL:latest
