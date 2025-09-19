@@ -1,0 +1,61 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+      - '**.md'
+
+env:
+  PROJECT_ID: ${{ secrets.PROJECT_ID }}
+  SERVICE_NAME: lio
+  REGION: us-central1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Build and Push Docker Image
+        run: |
+          gcloud auth configure-docker ${REGION}-docker.pkg.dev
+          docker build -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${SERVICE_NAME}/${SERVICE_NAME}-prod:${{ github.sha }} .
+          docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${SERVICE_NAME}/${SERVICE_NAME}-prod:${{ github.sha }}
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}-prod
+          image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}/${{ env.SERVICE_NAME }}-prod:${{ github.sha }}
+          region: ${{ env.REGION }}
+          env_vars: |
+            GCP_PROJECT_ID=${{ env.PROJECT_ID }}
+            APP_ENV=prod
+            LANGCHAIN_TRACING_V2=true
+            LANGCHAIN_PROJECT=lio
+          secrets: |
+            ACCESS_TOKEN_SECRET_KEY=ACCESS_TOKEN_SECRET_KEY:latest
+            DATABASE_URL=DATABASE_URL:latest
+            FIREBASE_CREDENTIALS=FIREBASE_CREDENTIALS:latest
+            GCS_BUCKET_NAME=GCS_BUCKET_NAME:latest
+            GEMINI_API_KEY=GEMINI_API_KEY:latest
+            GOOGLE_BUCKET_CREDENTIALS=GOOGLE_BUCKET_CREDENTIALS:latest
+            GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest
+            LANGCHAIN_API_KEY=LANGCHAIN_API_KEY:latest
+            REDIS_PASSWORD=REDIS_PASSWORD:latest
+            REDIS_URL=REDIS_URL:latest
+            REFRESH_TOKEN_SECRET_KEY=REFRESH_TOKEN_SECRET_KEY:latest
+            
+            
+            
+            
+            
