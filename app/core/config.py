@@ -51,10 +51,6 @@ class Settings(BaseSettings):
     CHAT_LLM_MODEL: str = Field("gemini-2.5-flash", env="CHAT_LLM_MODEL")
     SUMMARIZE_LLM_MODEL: str = Field("gemini-2.5-flash-lite", env="SUMMARIZE_LLM_MODEL")
 
-    LANGCHAIN_TRACING_V2: str = Field(..., env="LANGCHAIN_TRACING_V2")
-    LANGCHAIN_API_KEY: str = Field(..., env="LANGCHAIN_API_KEY")
-    LANGCHAIN_PROJECT: str = Field(..., env="LANGCHAIN_PROJECT")
-
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

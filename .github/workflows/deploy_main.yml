@@ -40,8 +40,6 @@ jobs:
           env_vars: |
             GCP_PROJECT_ID=${{ env.PROJECT_ID }}
             APP_ENV=prod
-            LANGCHAIN_TRACING_V2=false
-            LANGCHAIN_PROJECT=lio-dev
           secrets: |
             ACCESS_TOKEN_SECRET_KEY=ACCESS_TOKEN_SECRET_KEY:latest
             DATABASE_URL=DATABASE_URL:latest
@@ -50,7 +48,6 @@ jobs:
             GEMINI_API_KEY=GEMINI_API_KEY:latest
             GOOGLE_BUCKET_CREDENTIALS=GOOGLE_BUCKET_CREDENTIALS:latest
             GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest
-            LANGCHAIN_API_KEY=LANGCHAIN_API_KEY:latest
             REDIS_PASSWORD=REDIS_PASSWORD:latest
             REDIS_URL=REDIS_URL:latest
             REFRESH_TOKEN_SECRET_KEY=REFRESH_TOKEN_SECRET_KEY:latest
