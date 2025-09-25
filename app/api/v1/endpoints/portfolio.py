@@ -111,6 +111,7 @@ async def create_portfolio_from_pdf(
         id=draft_portfolio.id,
         name=draft_portfolio.name,
         status=draft_portfolio.status,
+        theme=draft_portfolio.theme
     )
 
 

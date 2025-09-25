@@ -39,6 +39,7 @@ class Portfolio(Base):
     )
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    theme:  Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     status: Mapped[PortfolioStatus] = mapped_column(
         SQLAlchemyEnum(PortfolioStatus), nullable=False, default=PortfolioStatus.DRAFT

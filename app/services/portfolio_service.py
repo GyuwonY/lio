@@ -70,6 +70,7 @@ class PortfolioService:
             status=PortfolioStatus.CONFIRMED,
             items=items,
             name=portfolio_in.name,
+            theme=portfolio_in.theme,
         )
 
         return PortfolioRead.model_validate(created_portfolio)
@@ -85,6 +86,7 @@ class PortfolioService:
             status=PortfolioStatus.DRAFT,
             items=[],
             name=portfolio_in.name,
+            theme=portfolio_in.theme,
         )
         return PortfolioRead.model_validate(draft_portfolio)
 
@@ -271,6 +273,7 @@ class PortfolioService:
             last_name=user.last_name,
             address=user.address,
             job=user.job,
+            theme=portfolio.theme
         )
 
     async def delete_portfolio(
