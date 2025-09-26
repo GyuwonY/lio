@@ -8,12 +8,13 @@ from app.schemas.portfolio_item_schema import PortfolioItemCreate, PortfolioItem
 
 class PortfolioBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+    name: Optional[str] = None
+    theme: Optional[str] = None
+    
 
 
 class PortfolioCreateFromText(PortfolioBase):
     """텍스트 입력을 통한 포트폴리오 생성을 위한 요청 스키마"""
-
-    name: Optional[str]
     text_items: List[PortfolioItemCreate]
 
 
@@ -21,14 +22,12 @@ class PortfolioCreateWithPdf(PortfolioBase):
     """PDF 업로드를 통한 포트폴리오 생성을 위한 내부 사용 스키마"""
 
     file_path: str
-    name: Optional[str]
 
 
 class PortfolioCreationResponse(PortfolioBase):
     """포트폴리오 생성 요청 시 즉시 반환되는 응답 스키마"""
 
     id: uuid.UUID
-    name: Optional[str]
     status: PortfolioStatus
 
 
@@ -38,7 +37,6 @@ class PortfolioReadWithoutItems(PortfolioBase):
     id: uuid.UUID
     user_id: uuid.UUID
     status: PortfolioStatus
-    name: Optional[str] = None
     source_type: str
     source_url: Optional[str] = None
     created_at: datetime
@@ -50,7 +48,6 @@ class PortfolioRead(PortfolioBase):
     id: uuid.UUID
     user_id: uuid.UUID
     status: PortfolioStatus
-    name: Optional[str] = None
     source_type: str
     source_url: Optional[str] = None
     created_at: datetime
@@ -61,17 +58,16 @@ class PublishedPortfolioRead(PortfolioBase):
     id: uuid.UUID
     user_id: uuid.UUID
     status: PortfolioStatus
-    name: Optional[str] = None
     created_at: datetime
     items: List[PortfolioItemRead] = []
-    first_name: Optional[str]
-    last_name: Optional[str]
-    address: Optional[str]
-    job: Optional[str]
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    address: Optional[str] = None
+    job: Optional[str] = None
 
 
 class PortfolioUpdate(PortfolioBase):
-    name: Optional[str] = None
+    pass
 
 
 class PortfolioConfirm(BaseModel):

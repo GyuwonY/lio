@@ -12,6 +12,7 @@ from app.models.portfolio import Portfolio, PortfolioSourceType, PortfolioStatus
 from app.models.portfolio_item import (
     PortfolioItem,
     PortfolioItemStatus,
+    PortfolioItemType,
 )
 
 
@@ -60,7 +61,12 @@ class PortfolioCRUD:
             .options(
                 selectinload(
                     Portfolio.items.and_(
-                        PortfolioItem.status == PortfolioItemStatus.CONFIRMED
+                        PortfolioItem.status == PortfolioItemStatus.CONFIRMED,
+                        PortfolioItem.type.in_([
+                            PortfolioItemType.INTRODUCTION,
+                            PortfolioItemType.EXPERIENCE,
+                            PortfolioItemType.PROJECT,
+                        ])
                     )
                 )
             )
@@ -131,6 +137,7 @@ class PortfolioCRUD:
         status: PortfolioStatus,
         items: List[PortfolioItem],
         name: str | None,
+        theme: str | None,
     ) -> Portfolio:
         db_portfolio = Portfolio(
             user_id=user_id,

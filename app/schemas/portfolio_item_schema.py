@@ -35,7 +35,7 @@ class PortfolioItemRead(PortfolioItemBase):
 class PortfolioItemUpdate(BaseModel):
     id: uuid.UUID
     type: PortfolioItemType
-    topic: str
+    topic: Optional[str] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     content: str
