@@ -1,9 +1,11 @@
 from typing import List
 import uuid
 from fastapi import Depends
-from sqlalchemy import desc, insert
+from sqlalchemy import desc, insert, cast, literal_column, values
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import aliased
+from pgvector.sqlalchemy import Vector
 
 from app.db.session import get_db
 from app.models.portfolio_item import (
@@ -80,3 +82,42 @@ class PortfolioItemCRUD:
             ).order_by(desc(PortfolioItem.start_date))
         )
         return list(result.scalars().all())
+    
+    
+    async def search_portfolio_items_by_embedding(
+        self,
+        *,
+        embeddings: List[List[float]],
+        portfolio_id: uuid.UUID,
+        limit: int = 5,
+    ) -> List[PortfolioItem]:
+        queries_cte = (
+            values(literal_column("embedding", Vector), name="queries")
+            .data([(e,) for e in embeddings])
+            .cte()
+        )
+
+        items_alias = aliased(PortfolioItem)
+        lateral_sq = (
+            select(items_alias)
+            .where(
+                items_alias.portfolio_id == portfolio_id,
+                items_alias.status == PortfolioItemStatus.CONFIRMED,
+            )
+            .order_by(
+                items_alias.embedding.l2_distance(
+                    cast(queries_cte.c.embedding, Vector)
+                )
+            )
+            .limit(limit)
+            .lateral()
+        )
+
+        items_from_lateral = aliased(PortfolioItem, lateral_sq)
+        stmt = (
+            select(items_from_lateral)
+            .select_from(queries_cte)
+            .join(items_from_lateral, literal_column("true"))
+        )
+        results = await self.db.execute(stmt)
+        return list(results.scalars().unique().all())

@@ -244,7 +244,7 @@ class PortfolioService:
             )
         return PortfolioRead.model_validate(portfolio)
 
-    async def get_published_portfolio_by_email(
+    async def get_published_portfolio_by_nickname(
         self, *, nickname: str
     ) -> PublishedPortfolioRead:
         user = await self.user_crud.get_user_by_nickname(nickname=nickname)
@@ -309,3 +309,7 @@ class PortfolioService:
 
         portfolio.name = portfolio_update.name
         return PortfolioReadWithoutItems.model_validate(portfolio)
+    
+    async def get_published_portfolios(self) -> PortfolioReadWithoutItems:
+        return await self.crud.get_published_portfolios()
+        

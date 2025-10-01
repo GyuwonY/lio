@@ -6,6 +6,7 @@ from langgraph.graph import StateGraph, END
 from pydantic import BaseModel, Field
 from app.crud.chat_message_crud import ChatMessageCRUD
 from app.crud.chat_session_crud import ChatSessionCRUD
+from app.crud.portfolio_item_crud import PortfolioItemCRUD
 from app.schemas.chat_message_schema import ChatMessageCreate, GraphStateQuery
 from app.crud.portfolio_crud import PortfolioCRUD
 from app.crud.qna_crud import QnACRUD
@@ -36,6 +37,7 @@ class ChatMessageService:
     def __init__(
         self,
         portfolio_crud: PortfolioCRUD = Depends(),
+        portfolio_item_crud: PortfolioItemCRUD = Depends(),
         qna_crud: QnACRUD = Depends(),
         user_crud: UserCRUD = Depends(),
         chat_message_crud: ChatMessageCRUD = Depends(),
@@ -45,6 +47,7 @@ class ChatMessageService:
         session_service: ChatSessionService = Depends(),
     ):
         self.portfolio_crud = portfolio_crud
+        self.portfolio_item_crud = portfolio_item_crud
         self.qna_crud = qna_crud
         self.user_crud = user_crud
         self.chat_message_crud = chat_message_crud
@@ -134,7 +137,7 @@ class ChatMessageService:
         if not embeddings:
             return {"portfolio_item_ids": [], "portfolio_items": []}
 
-        portfolio_items = await self.portfolio_crud.search_portfolio_items_by_embedding(
+        portfolio_items = await self.portfolio_item_crud.search_portfolio_items_by_embedding(
             embeddings=embeddings, portfolio_id=state.portfolio_id
         )
 

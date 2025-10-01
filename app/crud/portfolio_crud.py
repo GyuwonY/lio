@@ -1,11 +1,10 @@
 import uuid
 from typing import List
 from fastapi import Depends
-from sqlalchemy import cast, desc, literal_column, values
+from sqlalchemy import desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload, aliased
-from pgvector.sqlalchemy import Vector
+from sqlalchemy.orm import selectinload
 
 from app.db.session import get_db
 from app.models.portfolio import Portfolio, PortfolioSourceType, PortfolioStatus
@@ -146,6 +145,7 @@ class PortfolioCRUD:
             status=status,
             items=items,
             name=name,
+            theme=theme,
         )
 
         self.db.add(db_portfolio)
@@ -188,41 +188,13 @@ class PortfolioCRUD:
 
         await self.db.flush()
         return True
-
-    async def search_portfolio_items_by_embedding(
-        self,
-        *,
-        embeddings: List[List[float]],
-        portfolio_id: uuid.UUID,
-        limit: int = 5,
-    ) -> List[PortfolioItem]:
-        queries_cte = (
-            values(literal_column("embedding", Vector), name="queries")
-            .data([(e,) for e in embeddings])
-            .cte()
+    
+    
+    async def get_published_portfolios(self):
+        result = await self.db.execute(
+            select(Portfolio)
+            .where(Portfolio.status == PortfolioStatus.PUBLISHED)
+            .limit(6)
         )
-
-        items_alias = aliased(PortfolioItem)
-        lateral_sq = (
-            select(items_alias)
-            .where(
-                items_alias.portfolio_id == portfolio_id,
-                items_alias.status == PortfolioItemStatus.CONFIRMED,
-            )
-            .order_by(
-                items_alias.embedding.l2_distance(
-                    cast(queries_cte.c.embedding, Vector)
-                )
-            )
-            .limit(limit)
-            .lateral()
-        )
-
-        items_from_lateral = aliased(PortfolioItem, lateral_sq)
-        stmt = (
-            select(items_from_lateral)
-            .select_from(queries_cte)
-            .join(items_from_lateral, literal_column("true"))
-        )
-        results = await self.db.execute(stmt)
-        return list(results.scalars().unique().all())
+        
+        return result.scalars().first()
