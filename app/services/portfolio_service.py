@@ -310,6 +310,7 @@ class PortfolioService:
         portfolio.name = portfolio_update.name
         return PortfolioReadWithoutItems.model_validate(portfolio)
     
-    async def get_published_portfolios(self) -> PortfolioReadWithoutItems:
-        return await self.crud.get_published_portfolios()
+    async def get_published_portfolios(self) -> List[PortfolioReadWithoutItems]:
+        portfolios = await self.crud.get_published_portfolios()
+        return [PortfolioReadWithoutItems.model_validate(p) for p in portfolios]
         

@@ -190,11 +190,11 @@ class PortfolioCRUD:
         return True
     
     
-    async def get_published_portfolios(self):
+    async def get_published_portfolios(self) -> List[Portfolio]:
         result = await self.db.execute(
             select(Portfolio)
             .where(Portfolio.status == PortfolioStatus.PUBLISHED)
             .limit(6)
         )
         
-        return result.scalars().first()
+        return list(result.scalars().all())

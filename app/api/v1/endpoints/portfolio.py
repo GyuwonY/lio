@@ -202,9 +202,9 @@ async def update_portfolio(
         portfolio_update=portfolio_update,
     )
     
-@router.get("/publish", response_model=PortfolioReadWithoutItems)
+@router.get("/publish/main", response_model=List[PortfolioReadWithoutItems])
 async def get_published_portfolios(
     service: PortfolioService = Depends(),
-) -> PortfolioReadWithoutItems:
+) -> List[PortfolioReadWithoutItems]:
     return await service.get_published_portfolios()
 

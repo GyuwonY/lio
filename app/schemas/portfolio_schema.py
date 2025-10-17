@@ -36,6 +36,7 @@ class PortfolioReadWithoutItems(PortfolioBase):
 
     id: uuid.UUID
     user_id: uuid.UUID
+    name: Optional[str] = None
     status: PortfolioStatus
     source_type: str
     source_url: Optional[str] = None
